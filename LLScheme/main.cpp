@@ -212,10 +212,14 @@ int TreeStruct::RMQ(int x, int y) {
       int bit = maxBits(yID - xID + 1);
       int aIndex = minIndexOnBlock[xID][bit];
       int bIndex = minIndexOnBlock[yID - (1 << bit) + 1][bit];
+      int cIndex;
       if (level[aIndex] < level[bIndex]) {
-        minIndex = aIndex;
+        cIndex = aIndex;
       } else {
-        minIndex = bIndex;
+        cIndex = bIndex;
+      }
+      if (level[minIndex] > level[cIndex]) {
+        minIndex = cIndex;
       }
     }
   }
