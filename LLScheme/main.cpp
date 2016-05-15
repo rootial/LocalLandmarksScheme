@@ -17,7 +17,6 @@
 #include <fstream>
 #include <utility>
 
-
 #define inf 0x0f0f0f0f
 #define Delete(x) {if (x != NULL) { \
 delete []x; x = NULL;}}
@@ -26,6 +25,7 @@ delete []x; x = NULL;}}
 const int maxnode = 2000000;
 const int maxLandmarksNum = 51;
 const int maxBlockSize = 16;
+const int maxTestRounds = 1000000;
 
 typedef std::pair<int, int> PII;
 
@@ -63,6 +63,7 @@ public:
 
   virtual ~TreeStruct() {
     Free();
+
   }
 
 private:
@@ -184,7 +185,9 @@ void TreeStruct::constructIndex() {
 }
 
 int TreeStruct::RMQ(int x, int y) {
-  if (x > y) {std::swap(x, y);}
+  if (x > y) {
+    std::swap(x, y);
+  }
   int xID = x / blockSize;
   int yID = y / blockSize;
   int ix = x + 1;
@@ -246,6 +249,7 @@ int TreeStruct::queryDistanceGlobal(int a, int b) {
 }
 
 void TreeStruct::Free() {
+// puts("destroy TreeStruct");
   Delete(distance);
   Delete(level);
   Delete(trace);
@@ -287,6 +291,12 @@ public:
   void Free();
   void printStatistics();
 
+  double GetCurrentTimeSec() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + tv.tv_usec * 1e-6;
+  }
+
   LocalLandmarksScheme()
     : numVertices(0), timeLoad(0), timeIndexing(0) {}
   virtual ~LocalLandmarksScheme() {
@@ -298,14 +308,6 @@ private:
   int numVertices;
   std::vector<TreeStruct*> SPTree;
   int* rank = NULL;
-
-//  indexType *indexStruct;
-
-  double GetCurrentTimeSec() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec + tv.tv_usec * 1e-6;
-  }
 
   // Statistics
   double timeLoad, timeIndexing;
@@ -408,12 +410,12 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
         assert(que.size() < 78000);
       }
     }
-  //  std::cout << treeResult << std::endl;
+    //  std::cout << treeResult << std::endl;
     treeResult->constructIndex();
     SPTree.push_back(treeResult);
   }
   timeIndexing += GetCurrentTimeSec();
- // Debug(1);
+// Debug(1);
   return true;
 }
 
@@ -455,9 +457,7 @@ void LocalLandmarksScheme<NumSelectedLandmarks>
   Delete(rank);
 //  Debug(SPTree.size());
   for (auto &ptr : SPTree) {
-  //  assert(ptr != NULL);
-//  std::cout << "ptr: " << ptr << std::endl;
-    Delete(ptr);
+    delete ptr;
   }
 }
 
@@ -468,30 +468,52 @@ void LocalLandmarksScheme<NumSelectedLandmarks>
   printf("TimeLoad: %.6fs TimeIndexed: %.6fs\n", timeLoad, timeIndexing);
 }
 
+LocalLandmarksScheme<50> LLS;
+
+class TestLLS {
+public:
+  // test with random generated queries to calculate the average error
+  // with Global Landmarks Scheme
+  void testAverageError() {
+    double timeStart = -LLS.GetCurrentTimeSec();
+    int numV = LLS.getNumVertices();
+    double avgErr = 0;
+    for (int t = 0; t < maxTestRounds; ) {
+      int u = (int)(1.0 * rand() / RAND_MAX * numV);
+      int v = (int)(1.0 * rand() / RAND_MAX * numV);
+      if (u >= numV || v >= numV) {
+        continue;
+      }
+      t++;
+      int d0 = LLS.queryDistanceGlobal(u, v);
+      int d1 = LLS.queryDistance(u, v);
+      assert(d0 >= d1);
+
+      avgErr += d0 - d1;
+    }
+
+    avgErr = avgErr * 1.0 / maxTestRounds;
+    timeStart += LLS.GetCurrentTimeSec();
+
+    // compare result of LocalLandmarks Scheme with that of Global Landmarks Scheme...
+    printf("Run %d test cases in %.6fs, Average Error: %.6f\n", maxTestRounds, timeStart, avgErr);
+  }
+};
+
 char filename[20] = "Slashdot0811.txt";
 
 int main() {
-  LocalLandmarksScheme<50> LLS;
+
+  TestLLS testUnit;
+
+  srand(time(NULL));
 
   if (LLS.constructIndex(filename)) {
-
+    LLS.printStatistics();
+    testUnit.testAverageError();
   } else {
     puts("Read Graph error!");
     exit(EXIT_FAILURE);
   }
-
-  srand(time(NULL));
-  int relaErr = 0;
-  for (int t = 0; t <= 100000; t++) {
-    int u = (int)(1.0 * rand() / RAND_MAX * 77360);
-    int v = (int)(1.0 * rand() / RAND_MAX * 77360);
-   // std::cout << u << " " << v << std::endl;
-    int d0 = LLS.queryDistanceGlobal(u, v);
-    int d1 = LLS.queryDistance(u, v);
-    assert(d0 >= d1);
-    relaErr += d0 - d1;
-  }
-  LLS.printStatistics();
-  std::cout << "Average Error: " << relaErr/ 100000.0 << std::endl;
   return 0;
 }
