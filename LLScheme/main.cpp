@@ -19,7 +19,8 @@
 
 
 #define inf 0x0f0f0f0f
-#define Delete(x) {if (x != NULL) {delete []x; x = NULL;}}
+#define Delete(x) {if (x != NULL) { \
+delete []x; x = NULL;}}
 #define Debug(x) printf("Excuted here! %d\n", (x))
 
 const int maxnode = 2000000;
@@ -43,8 +44,8 @@ inline int maxBits(int x) {
 
 class TreeStruct {
 public:
-  std::vector<int> *tree;
-  int *distance;
+  std::vector<int> *tree = NULL;
+  int *distance = NULL;
 
   void constructIndex();
 
@@ -75,13 +76,13 @@ private:
 
   std::bitset < 1 << maxBlockSize > visited;
 
-  int *level;
-  int *trace;
-  int *label;
+  int *level = NULL;
+  int *trace = NULL;
+  int *label = NULL;
 
-  std::vector<std::vector<int>> *maskMinIndex;
-  int *maskOfBlock;
-  int (*minIndexOnBlock)[20];
+  std::vector<std::vector<int>> *maskMinIndex = NULL;
+  std::vector<int> *minIndexOnBlock = NULL;
+  int *maskOfBlock = NULL;
 
   void dfs(int u, int fa);
 
@@ -121,18 +122,18 @@ void TreeStruct::constructIndex() {
   blockSize >>= 1;
   blockSize = std::max(blockSize, 1);
   blockNums = (indexSize + blockSize - 1) / blockSize;
-  Debug(blockSize);
-  Debug(blockNums);
+//  Debug(blockSize);
+//  Debug(blockNums);
 
   maskMinIndex = new std::vector<std::vector<int>>[1 << blockSize];
   maskOfBlock = new int[blockNums];
-  minIndexOnBlock = new int[blockNums][20];
+  minIndexOnBlock = new std::vector<int>[blockNums];
 
   for (int index = 0; index < indexSize; index++) {
-    //
+
     int blockID = index / blockSize;
     if (index % blockSize == 0) {
-      minIndexOnBlock[blockID][0] = index;
+      minIndexOnBlock[blockID].push_back(index);
       continue;
     }
     if (level[minIndexOnBlock[blockID][0]] > level[index]) {
@@ -146,9 +147,9 @@ void TreeStruct::constructIndex() {
     for (int blockID = 0; blockID + (1ll << step) < blockNums; blockID++) {
       if (level[minIndexOnBlock[blockID][step - 1]]
           > level[minIndexOnBlock[blockID + (1ll << (step - 1))][step - 1]]) {
-        minIndexOnBlock[blockID][step] = (minIndexOnBlock[blockID + (1ll << (step - 1))][step - 1]);
+        minIndexOnBlock[blockID].push_back(minIndexOnBlock[blockID + (1ll << (step - 1))][step - 1]);
       } else {
-        minIndexOnBlock[blockID][step] = (minIndexOnBlock[blockID][step - 1]);
+        minIndexOnBlock[blockID].push_back(minIndexOnBlock[blockID][step - 1]);
       }
     }
   }
@@ -183,6 +184,7 @@ void TreeStruct::constructIndex() {
 }
 
 int TreeStruct::RMQ(int x, int y) {
+  if (x > y) {std::swap(x, y);}
   int xID = x / blockSize;
   int yID = y / blockSize;
   int ix = x + 1;
@@ -295,7 +297,7 @@ private:
 
   int numVertices;
   std::vector<TreeStruct*> SPTree;
-  int* rank;
+  int* rank = NULL;
 
 //  indexType *indexStruct;
 
@@ -334,7 +336,6 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
   //
   // Prepare the adjacency list and index space
   //
-  Free();
   timeLoad = -GetCurrentTimeSec();
   int &V = numVertices;
   V = 0;
@@ -407,9 +408,12 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
         assert(que.size() < 78000);
       }
     }
+  //  std::cout << treeResult << std::endl;
+    treeResult->constructIndex();
     SPTree.push_back(treeResult);
   }
-  Debug(1);
+  timeIndexing += GetCurrentTimeSec();
+ // Debug(1);
   return true;
 }
 
@@ -417,6 +421,9 @@ template<int NumSelectedLandmarks>
 int LocalLandmarksScheme<NumSelectedLandmarks>
 ::queryDistance(int u, int v) {
   int distance = INF8;
+  if (u >= numVertices || v >= numVertices) {
+    return distance;
+  }
   for (auto treeResult : SPTree) {
     int val = treeResult->TreeStruct::queryDistance(rank[u], rank[v]);
     if (distance > val) {
@@ -430,8 +437,11 @@ template<int NumSelectedLandmarks>
 int LocalLandmarksScheme<NumSelectedLandmarks>
 ::queryDistanceGlobal(int u, int v) {
   int distance = INF8;
+  if (u >= numVertices || v >= numVertices) {
+    return distance;
+  }
   for (auto treeResult : SPTree) {
-    int val = treeResult->distance[rank[u]] + treeResult->distance[rank[v]];
+    int val = treeResult->queryDistanceGlobal(rank[u], rank[v]);
     if (distance > val) {
       distance = val;
     }
@@ -443,16 +453,25 @@ template<int NumSelectedLandmarks>
 void LocalLandmarksScheme<NumSelectedLandmarks>
 ::Free() {
   Delete(rank);
-  for (auto ptr : SPTree) {
+//  Debug(SPTree.size());
+  for (auto &ptr : SPTree) {
+  //  assert(ptr != NULL);
+//  std::cout << "ptr: " << ptr << std::endl;
     Delete(ptr);
   }
+}
+
+template<int NumSelectedLandmarks>
+void LocalLandmarksScheme<NumSelectedLandmarks>
+::printStatistics() {
+  printf("Load Graph with %d vertices\n", numVertices);
+  printf("TimeLoad: %.6fs TimeIndexed: %.6fs\n", timeLoad, timeIndexing);
 }
 
 char filename[20] = "Slashdot0811.txt";
 
 int main() {
-  auto init = clock();
-  LocalLandmarksScheme<10> LLS;
+  LocalLandmarksScheme<50> LLS;
 
   if (LLS.constructIndex(filename)) {
 
@@ -460,7 +479,19 @@ int main() {
     puts("Read Graph error!");
     exit(EXIT_FAILURE);
   }
-  std::cout << (clock() - init) * 1.0 / CLOCKS_PER_SEC << "s" << std::endl;
-  Debug(1);
+
+  srand(time(NULL));
+  int relaErr = 0;
+  for (int t = 0; t <= 100000; t++) {
+    int u = (int)(1.0 * rand() / RAND_MAX * 77360);
+    int v = (int)(1.0 * rand() / RAND_MAX * 77360);
+   // std::cout << u << " " << v << std::endl;
+    int d0 = LLS.queryDistanceGlobal(u, v);
+    int d1 = LLS.queryDistance(u, v);
+    assert(d0 >= d1);
+    relaErr += d0 - d1;
+  }
+  LLS.printStatistics();
+  std::cout << "Average Error: " << relaErr/ 100000.0 << std::endl;
   return 0;
 }
