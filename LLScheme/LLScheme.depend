@@ -1,0 +1,21 @@
+# depslib dependency file v1.0
+1463300042 source:e:\github\locallandmarksscheme\llscheme\main.cpp
+	<malloc.h>
+	<bitset>
+	<assert.h>
+	<stdint.h>
+	<stdlib.h>
+	<xmmintrin.h>
+	<sys/time.h>
+	<climits>
+	<iostream>
+	<sstream>
+	<string>
+	<vector>
+	<stack>
+	<queue>
+	<set>
+	<algorithm>
+	<fstream>
+	<utility>
+
