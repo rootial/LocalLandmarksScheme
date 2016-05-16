@@ -1,14 +1,13 @@
 # depslib dependency file v1.0
-1463326317 source:e:\github\locallandmarksscheme\llscheme\main.cpp
+1463415348 source:e:\github\locallandmarksscheme\llscheme\main.cpp
+	"LocalLandmarksScheme.h"
+	"TestUnit.h"
 	<malloc.h>
 	<bitset>
-	<assert.h>
-	<stdint.h>
-	<stdlib.h>
-	<xmmintrin.h>
-	<sys/time.h>
+	<cassert>
+	<cstdint>
+	<cstdlib>
 	<climits>
-	<iostream>
 	<sstream>
 	<string>
 	<vector>
@@ -17,5 +16,77 @@
 	<set>
 	<algorithm>
 	<fstream>
-	<utility>
+
+1463415393 e:\github\locallandmarksscheme\llscheme\graphcompression.h
+	"CommonHeader.h"
+	<cstdint>
+	<cstdlib>
+	<vector>
+
+1463410440 e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.h
+	"CommonHeader.h"
+	"GraphCompression.h"
+	"TreeStruct.h"
+	<algorithm>
+	<cstdlib>
+	<queue>
+	<vector>
+	<iostream>
+
+1463406997 e:\github\locallandmarksscheme\llscheme\treestruct.h
+	"CommonHeader.h"
+	<bitset>
+	<cstdio>
+	<sys/time.h>
+	<vector>
+
+1463389176 e:\github\locallandmarksscheme\llscheme\common.h
+	<stdint.h>
+
+1463414626 source:e:\github\locallandmarksscheme\llscheme\graphcompression.cpp
+	"CommonHeader.h"
+	"GraphCompression.h"
+
+1463394093 source:e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.cpp
+	"LocalLandmarksScheme.h"
+	<cstdlib>
+	<cstdio>
+	<algorithm>
+	<queue>
+
+1463406997 source:e:\github\locallandmarksscheme\llscheme\treestruct.cpp
+	"CommonHeader.h"
+	"TreeStruct.h"
+
+1463389106 source:e:\github\locallandmarksscheme\llscheme\common.h
+	<stdint.h>
+
+1463384435 source:e:\github\locallandmarksscheme\llscheme\graphcompression.h
+
+1463389195 source:e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.h
+	"TreeStruct.h"
+	<vector>
+	<iostream>
+
+1463389178 source:e:\github\locallandmarksscheme\llscheme\treestruct.h
+	<bitset>
+	<sys/time.h>
+	<vector>
+
+1463410408 e:\github\locallandmarksscheme\llscheme\commonheader.h
+	<cassert>
+	<cstdint>
+	<queue>
+	<vector>
+
+1463415236 source:e:\github\locallandmarksscheme\llscheme\testunit.cpp
+	"LocalLandmarksScheme.h"
+	"GraphCompression.h"
+	<cstdio>
+
+1463415862 e:\github\locallandmarksscheme\llscheme\testunit.h
+	"CommonHeader.h"
+	"LocalLandmarksScheme.h"
+	"GraphCompression.h"
+	<cstdio>
 

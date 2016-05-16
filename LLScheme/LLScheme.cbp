@@ -32,6 +32,23 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="CommonHeader.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GraphCompression.cpp" />
+		<Unit filename="GraphCompression.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="LocalLandmarksScheme.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="TestUnit.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="TreeStruct.cpp" />
+		<Unit filename="TreeStruct.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
