@@ -38,7 +38,7 @@ public:
     printf("Run %d test cases in %.6fs, Average Error: %.6f\n", maxTestRounds, timeStart, avgErr);
   }
 
-  void testCompressGraphp() {
+  void testCompressGraph() {
     char edges[][4] = {
       "ag", "ah", "gh", "ab", "bc",
       "ad", "de", "df", "hi", "ij",
@@ -52,15 +52,18 @@ public:
       sz = std::max(sz, std::max(u, v) + 1);
     }
 //    Debug(sz);
-    std::vector<std::vector<int> > graph(sz);
+    std::vector<std::vector<Edge> > graph(sz);
     for (int i = 0; i < 17; i++) {
       int u = (int)edges[i][0] - 'a';
       int v = (int)edges[i][1] - 'a';
-      graph[u].push_back(v);
-      graph[v].push_back(u);
+      graph[u].push_back(Edge(v, 1));
+      graph[v].push_back(Edge(u, 1));
     }
+
+
     GraphCompression GC(sz, graph);
-    GC.compressGraph();
+    std::vector<std::vector<Edge> > compressedGraph(sz);
+    int compressedGraphVertices = GC.compressGraph(compressedGraph);
 
     PIU answers[] = {PIU(0, 0), PIU(0, 1), PIU(0, 2), PIU(0, 1), PIU(0, 2),
                      PIU(0, 2), PIU(0, 0), PIU(0, 0), PIU(0, 0), PIU(0, 0),
@@ -68,6 +71,16 @@ public:
                     };
 
     for (int u = 0; u < sz; u++) {
+      if (GC.nodesIndex[u].type == TreeNodeType) {
+        printf("Node: %d, EntryNode: %d, dist: %d\n", u,
+               GC.nodesIndex[u].attr[0].first, GC.nodesIndex[u].attr[0].second);
+
+      } else if (GC.nodesIndex[u].type == ChainNodeType) {
+        for (auto& attr : GC.nodesIndex[u].attr) {
+          printf("Node: %d, EndNode: %d, dist: %d\n", u,
+                 attr.first, attr.second);
+        }
+      }
       if ((GC.nodesIndex[u].type != 0 && answers[u].second == 0) ||
           (GC.nodesIndex[u].attr[0].first == answers[u].first && GC.nodesIndex[u].attr[0].second == answers[u].second)) {
       } else {
@@ -77,6 +90,7 @@ public:
         return;
       }
     }
+    printf("Graph has been compressed into %d vertices\n", compressedGraphVertices);
     puts("Passed all tests!");
   }
 };

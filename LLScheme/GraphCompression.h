@@ -8,27 +8,30 @@
 
 class GraphCompression {
 public:
-  int numVertices;
-
-  std::vector<std::vector<int> >& graph;
+  int* rank = NULL;
 
   struct IndexType {
     int type;
     std::vector<PIU> attr;
     IndexType() {
-      type = 3;
+      type = OtherNodeType;
     }
   };
-  IndexType* nodesIndex;
+  IndexType* nodesIndex = NULL;
 
-  GraphCompression(int n, std::vector<std::vector<int> >&g): numVertices(n), graph(g) {}
+  GraphCompression(int n, const std::vector<std::vector<Edge> >& g):
+    numVertices(n), graph(g) {}
 
-  void compressGraph();
+  int compressGraph(std::vector<std::vector<Edge> >& compressGraph);
 
 private:
+  int numVertices;
+  const std::vector<std::vector<Edge> >& graph;
+
   void dfsGoThroughTreeNodes(int root, int u, int fa, int dep);
   void Free() {
-    Delete(nodesIndex);
+    DeleteArrPtr(nodesIndex);
+    DeleteArrPtr(rank);
   }
 };
 

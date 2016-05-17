@@ -1,6 +1,44 @@
 #include "CommonHeader.h"
 #include "TreeStruct.h"
 
+// build SPTree using Dijkstra
+void TreeStruct::buildSPTree(const std::vector<std::vector<Edge> >& inGrapph) {
+
+  std::bitset<maxnode> vis;
+  pq que;
+
+  for (int v = 0; v < numVertices; v++) {
+    distance[v] = INF8;
+  }
+  vis.reset();
+
+  que.push(Node(root, 0));
+  distance[root] = 0;
+
+  while (que.size()) {
+    Node x = que.top();
+    que.pop();
+    int u = x.u;
+    if (vis[u] == 1) {
+      continue;
+    }
+
+    vis[u] = 1;
+    if (u != root) {
+      tree[parent[u]].push_back(u);
+    }
+
+    for (auto &e : inGrapph[u]) {
+      int v = e.v;
+      if (distance[v] > distance[u] + e.d) {
+        distance[v] = distance[u] + e.d;
+        parent[v] = u;
+        que.push(Node(v, distance[v]));
+      }
+    }
+  }
+}
+
 void TreeStruct::dfs(int u, int fa) {
   label[u] = indexSize;
   trace[indexSize] = u;
@@ -16,12 +54,12 @@ void TreeStruct::dfs(int u, int fa) {
   }
 }
 
-void TreeStruct::constructIndex() {
+void TreeStruct::constructIndex(const std::vector<std::vector<Edge> >& inGrapph) {
+  buildSPTree(inGrapph);
+
   indexSize = 0;
   treeNodesNums = 0;
-  level = new int[numVertices * 2];
-  trace = new int[numVertices * 2];
-  label = new int[numVertices];
+
   dfs(root, -1);
 //  Debug(nodesNumbers);
   blockSize = -1;
@@ -154,24 +192,18 @@ int TreeStruct::queryDistance(int a, int b) {
   return INF8;
 }
 
-int TreeStruct::queryDistanceGlobal(int a, int b) {
-  if (a < numVertices && b < numVertices) {
-    return distance[a] + distance[b];
-  }
-  return INF8;
-}
-
 void TreeStruct::Free() {
 // puts("destroy TreeStruct");
-  Delete(distance);
-  Delete(level);
-  Delete(trace);
-  Delete(label);
+  DeleteArrPtr(distance);
+  DeleteArrPtr(level);
+  DeleteArrPtr(trace);
+  DeleteArrPtr(label);
+  DeleteArrPtr(parent);
 
-  Delete(tree);
-  Delete(maskMinIndex);
-  Delete(maskOfBlock);
-  Delete(minIndexOnBlock);
+  DeleteArrPtr(tree);
+  DeleteArrPtr(maskMinIndex);
+  DeleteArrPtr(maskOfBlock);
+  DeleteArrPtr(minIndexOnBlock);
 }
 
 TreeStruct::~TreeStruct() {

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <bitset>
 #include <queue>
 #include <vector>
 #include <iostream>
@@ -57,12 +58,15 @@ private:
   int numVertices;
   std::vector<TreeStruct*> SPTree;
   int* rank = NULL;
+  std::bitset<maxnode> vis;
 
   // Statistics
   double timeLoad, timeIndexing;
-};
 
-const int maxnode = 2000000;
+  int dfs(const std::vector<std::vector<Edge> >& graph, int u, int dep);
+
+  bool isGraphConnected(const std::vector<std::vector<Edge> >& graph);
+};
 
 template<int NumSelectedLandmarks>
 bool LocalLandmarksScheme<NumSelectedLandmarks>
@@ -96,82 +100,80 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
     V = std::max(V, std::max(es[i].first, es[i].second) + 1);
   }
 
-  std::vector<std::vector<int> > adj(V);
+  std::vector<std::vector<Edge> > iniGraph(V);
   for (size_t i = 0; i < es.size(); ++i) {
     int v = es[i].first, w = es[i].second;
-    assert(w != v);
-    adj[v].push_back(w);
-    adj[w].push_back(v);
+    if (w == v) {
+      continue;
+    }
+    iniGraph[v].push_back(Edge(w, 1));
+    iniGraph[w].push_back(Edge(v, 1));
   }
 
   for (int v = 0; v < V; v++) {
-    sort(adj[v].begin(), adj[v].end());
-    adj[v].erase(std::unique(adj[v].begin(), adj[v].end()), adj[v].end());
+    sort(iniGraph[v].begin(), iniGraph[v].end());
+    iniGraph[v].erase(std::unique(iniGraph[v].begin(), iniGraph[v].end()), iniGraph[v].end());
+
+    for (size_t i = 1; i < iniGraph[v].size(); i++) {
+      assert(iniGraph[v][i].v != iniGraph[v][i - 1].v);
+    }
   }
 
+//  assert(isGraphConnected(iniGraph) == true);
   timeLoad += GetCurrentTimeSec();
 
   // Order vertices by decreasing order of degree
-  //
-  timeIndexing = -GetCurrentTimeSec();
 
+  timeIndexing = -GetCurrentTimeSec();
   {
     // Order
-    std::vector<std::pair<float, int> > deg(V);
-    for (int v = 0; v < V; ++v) {
+    GraphCompression GC(numVertices, iniGraph);
+
+    std::vector<std::vector<Edge> > compressedGraph(numVertices);
+    int compressedGraphVertices = GC.compressGraph(compressedGraph);
+    MSG("Compressed Nodes to: ", compressedGraphVertices);
+    return true;
+
+    std::vector<std::pair<float, int> > deg(compressedGraphVertices);
+    int &VN = compressedGraphVertices;
+
+    for (int v = 0; v < VN; ++v) {
       // We add a random value here to diffuse nearby vertices
-      deg[v] = std::make_pair(adj[v].size() + float(rand()) / RAND_MAX, v);
+      if (compressedGraph[v].size() > 0) {
+        deg[v] = std::make_pair(compressedGraph[v].size() + float(rand()) / RAND_MAX, v);
+      }
     }
     std::sort(deg.rbegin(), deg.rend());
 
     // Relabel the vertex IDs
-    rank = new int[V];
-    for (int i = 0; i < V; ++i) rank[deg[i].second] = i;
-    std::vector<std::vector<int> > new_adj(V);
-    for (int v = 0; v < V; ++v) {
-      for (size_t i = 0; i < adj[v].size(); ++i) {
-        new_adj[rank[v]].push_back(rank[adj[v][i]]);
+    rank = new int[VN];
+    for (int i = 0; i < VN; ++i) rank[deg[i].second] = i;
+    std::vector<std::vector<Edge> > relabelGraph(VN);
+    for (int v = 0; v < VN; ++v) {
+      for (auto& e : compressedGraph[v]) {
+        relabelGraph[rank[v]].push_back(Edge(rank[e.v], e.d));
       }
     }
-    adj.swap(new_adj);
-  }
-  // select NumSelectedLandmarks landmarks by degrees
-  for (int root = 0; root < NumSelectedLandmarks; root++) {
-    std::bitset<maxnode> vis;
-    std::queue<int> que;
 
-    que.push(root);
-    TreeStruct *treeResult = new TreeStruct(root, numVertices);
+    // construct NumSelectedLandmarks SPTree and index on compressedGraph
+    // except the first one built on iniGraph
+    {
+      // build SPTree on iniGraph
+      TreeStruct* ts = new TreeStruct(0, numVertices);
+      ts->constructIndex(iniGraph);
+      SPTree.push_back(ts);
 
-    std::vector<int>* _tree = treeResult->tree;
-    int* dist = treeResult->distance;
-    for (int v = 0; v < numVertices; v++) {
-      dist[v] = INF8;
-    }
-    dist[root] = 0;
-    vis[root] = 1;
+      // build NumSelectedLandmarks - 1 SPTree on compressedGraph
+      // select NumSelectedLandmarks landmarks by degrees
 
-    while (que.size()) {
-      int u = que.front();
-      que.pop();
-      _tree[u].clear();
-
-      for (auto &v : adj[u]) {
-        if (vis[v]) {
-          continue;
-        }
-        dist[v] = dist[u] + 1;
-        _tree[u].push_back(v);
-        vis[v] = 1;
-        que.push(v);
+      for (int i = 0; i < NumSelectedLandmarks - 1; i++) {
+        ts = new TreeStruct(i, compressedGraphVertices);
+        ts->constructIndex(compressedGraph);
+        SPTree.push_back(ts);
       }
     }
-    //  std::cout << treeResult << std::endl;
-    treeResult->constructIndex();
-    SPTree.push_back(treeResult);
-    Debug(root);
   }
-  GraphCompression GC(numVertices, adj);
+
   timeIndexing += GetCurrentTimeSec();
 // Debug(1);
   return true;
@@ -194,34 +196,56 @@ int LocalLandmarksScheme<NumSelectedLandmarks>
 }
 
 template<int NumSelectedLandmarks>
-int LocalLandmarksScheme<NumSelectedLandmarks>
-::queryDistanceGlobal(int u, int v) {
-  int distance = INF8;
-  if (u >= numVertices || v >= numVertices) {
-    return distance;
-  }
-  for (auto treeResult : SPTree) {
-    int val = treeResult->queryDistanceGlobal(rank[u], rank[v]);
-    if (distance > val) {
-      distance = val;
-    }
-  }
-  return distance;
-}
-
-template<int NumSelectedLandmarks>
 void LocalLandmarksScheme<NumSelectedLandmarks>
 ::printStatistics() {
   printf("Load Graph with %d vertices\n", numVertices);
   printf("TimeLoad: %.6fs TimeIndexed: %.6fs\n", timeLoad, timeIndexing);
 }
+template<int NumSelectedLandmarks>
+int LocalLandmarksScheme<NumSelectedLandmarks>
+::dfs(const std::vector<std::vector<Edge> >& graph, int u, int dep) {
+  int cnt = 1;
+  vis[u] = 1;
+//  assert(dep < 1000);
+  for (auto& e : graph[u]) {
+    int v = e.v;
+    if (!vis[v]) {
+      cnt += dfs(graph, v, dep + 1);
+    }
+  }
+  return cnt;
+}
+
+template<int NumSelectedLandmarks>
+bool LocalLandmarksScheme<NumSelectedLandmarks>
+::isGraphConnected(const std::vector<std::vector<Edge> >& graph) {
+  std::queue<int> que;
+  que.push(0);
+  int cnt = 1;
+  vis[0] = 1;
+  while (que.size()) {
+    int u = que.front();
+    que.pop();
+    for (auto& e : graph[u]) {
+      int v = e.v;
+      if (vis[v]) {
+        continue;
+      }
+      cnt++;
+      vis[v] = 1;
+      que.push(v);
+    }
+  }
+  Debug(cnt);
+  return cnt == 77360;
+}
 
 template<int NumSelectedLandmarks>
 void LocalLandmarksScheme<NumSelectedLandmarks>
 ::Free() {
-  Delete(rank);
+  DeleteArrPtr(rank);
   for (auto &ptr : SPTree) {
-    delete ptr;
+    DeletePtr(ptr);
   }
 }
 

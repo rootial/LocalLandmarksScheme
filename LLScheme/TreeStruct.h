@@ -6,6 +6,7 @@
 #include <bitset>
 #include <cstdio>
 #include <sys/time.h>
+#include <queue>
 #include <vector>
 
 inline int maxBits(int x) {
@@ -19,20 +20,33 @@ inline int maxBits(int x) {
   return ret;
 }
 
+struct Node {
+  int u, d;
+  Node() {}
+  Node(int u, int d): u(u), d(d) {}
+  bool operator < (const Node& o) const {
+    return d > o.d;
+  }
+};
+
+typedef std::priority_queue<Node> pq;
+
 class TreeStruct {
 public:
   std::vector<int> *tree = NULL;
   int *distance = NULL;
 
-  void constructIndex();
+  void constructIndex(const std::vector<std::vector<Edge> >& inGrapph);
 
   int queryDistance(int x, int y);
-
-  int queryDistanceGlobal(int x, int y);
 
   TreeStruct(int root, int numVertices): root(root), numVertices(numVertices) {
     tree = new std::vector<int>[numVertices];
     distance = new int[numVertices];
+    level = new int[numVertices * 2];
+    trace = new int[numVertices * 2];
+    label = new int[numVertices];
+    parent = new int[numVertices];
   }
 
   virtual ~TreeStruct();
@@ -51,10 +65,13 @@ private:
   int *level = NULL;
   int *trace = NULL;
   int *label = NULL;
+  int *parent = NULL;
 
   std::vector<std::vector<int>> *maskMinIndex = NULL;
   std::vector<int> *minIndexOnBlock = NULL;
   int *maskOfBlock = NULL;
+
+  void buildSPTree(const std::vector<std::vector<Edge> >& inGrapph);
 
   void dfs(int u, int fa);
 

@@ -17,14 +17,17 @@
 #include <algorithm>
 #include <fstream>
 
-char filename[30] = "E:\\GitHub\\web-Google.txt";
-class TestLLS;
+//char filename[30] = "E:\\GitHub\\web-Google.txt";
+char filename[30] = "Slashdot0811.txt";
+//char filename[30] = "test.txt";
+LocalLandmarksScheme<50> LLS;
 
 int main() {
 
-  TestLLS testUnit;
-  testUnit.testCompressGraphp();
-  return 0;
+//  TestLLS testUnit;
+//  testUnit.testCompressGraph();
+  LLS.constructIndex(filename);
+//  return 0;
 
 //  srand(time(NULL));
 //
