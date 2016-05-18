@@ -36,11 +36,12 @@ public:
   std::vector<int> *tree = NULL;
   int *distance = NULL;
 
-  void constructIndex(const std::vector<std::vector<Edge> >& inGrapph);
+  void constructIndex();
 
   int queryDistance(int x, int y);
 
-  TreeStruct(int root, int numVertices): root(root), numVertices(numVertices) {
+  TreeStruct(int root, int numVertices,
+             const std::vector<std::vector<Edge> >& g): graph(g), root(root), numVertices(numVertices) {
     tree = new std::vector<int>[numVertices];
     distance = new int[numVertices];
     level = new int[numVertices * 2];
@@ -52,6 +53,7 @@ public:
   virtual ~TreeStruct();
 
 private:
+  const std::vector<std::vector<Edge> >& graph;
 
   int root;
   int numVertices;
@@ -71,7 +73,7 @@ private:
   std::vector<int> *minIndexOnBlock = NULL;
   int *maskOfBlock = NULL;
 
-  void buildSPTree(const std::vector<std::vector<Edge> >& inGrapph);
+  void buildSPTree();
 
   void dfs(int u, int fa);
 

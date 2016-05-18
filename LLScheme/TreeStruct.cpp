@@ -2,7 +2,7 @@
 #include "TreeStruct.h"
 
 // build SPTree using Dijkstra
-void TreeStruct::buildSPTree(const std::vector<std::vector<Edge> >& inGrapph) {
+void TreeStruct::buildSPTree() {
 
   std::bitset<maxnode> vis;
   pq que;
@@ -28,7 +28,7 @@ void TreeStruct::buildSPTree(const std::vector<std::vector<Edge> >& inGrapph) {
       tree[parent[u]].push_back(u);
     }
 
-    for (auto &e : inGrapph[u]) {
+    for (auto &e : graph[u]) {
       int v = e.v;
       if (distance[v] > distance[u] + e.d) {
         distance[v] = distance[u] + e.d;
@@ -54,13 +54,14 @@ void TreeStruct::dfs(int u, int fa) {
   }
 }
 
-void TreeStruct::constructIndex(const std::vector<std::vector<Edge> >& inGrapph) {
-  buildSPTree(inGrapph);
-
+void TreeStruct::constructIndex() {
+  buildSPTree();
   indexSize = 0;
   treeNodesNums = 0;
 
   dfs(root, -1);
+
+
 //  Debug(nodesNumbers);
   blockSize = -1;
   while ((1ll << (blockSize + 1)) <= indexSize) {

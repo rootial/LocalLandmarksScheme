@@ -8,7 +8,11 @@
 
 class GraphCompression {
 public:
+  // vertices of compressed graph
+  int cVertices = 0;
+
   int* rank = NULL;
+  std::vector<Edge>* cGraph = NULL;
 
   struct IndexType {
     int type;
@@ -17,19 +21,35 @@ public:
       type = OtherNodeType;
     }
   };
+
   IndexType* nodesIndex = NULL;
 
-  GraphCompression(int n, const std::vector<std::vector<Edge> >& g):
+  GraphCompression(int n, ConstGPtr g):
     numVertices(n), graph(g) {}
 
-  int compressGraph(std::vector<std::vector<Edge> >& compressGraph);
+  int compressGraph();
+
+  bool loadGraph(int n, ConstGPtr g) {
+    if (g != NULL) {
+      numVertices = n;
+      graph = g;
+      return true;
+    }
+    return false;
+  }
 
 private:
-  int numVertices;
-  const std::vector<std::vector<Edge> >& graph;
 
+  // vertices of initial graph
+  int numVertices;
+  ConstGPtr graph = NULL;
+  GPtr compressedGraph = NULL;
+
+  void relabelGraph();
   void dfsGoThroughTreeNodes(int root, int u, int fa, int dep);
   void Free() {
+    DeleteArrPtr(cGraph);
+    DeleteArrPtr(compressedGraph);
     DeleteArrPtr(nodesIndex);
     DeleteArrPtr(rank);
   }

@@ -51,8 +51,8 @@ public:
       int v = (int)edges[i][1] - 'a';
       sz = std::max(sz, std::max(u, v) + 1);
     }
-//    Debug(sz);
-    std::vector<std::vector<Edge> > graph(sz);
+    GPtr graph = new std::vector<Edge>[sz];
+//    auto graph = std::vector<std::vector<Edge> >(sz);
     for (int i = 0; i < 17; i++) {
       int u = (int)edges[i][0] - 'a';
       int v = (int)edges[i][1] - 'a';
@@ -62,32 +62,40 @@ public:
 
 
     GraphCompression GC(sz, graph);
-    std::vector<std::vector<Edge> > compressedGraph(sz);
-    int compressedGraphVertices = GC.compressGraph(compressedGraph);
+    int compressedGraphVertices = GC.compressGraph();
 
-    PIU answers[] = {PIU(0, 0), PIU(0, 1), PIU(0, 2), PIU(0, 1), PIU(0, 2),
-                     PIU(0, 2), PIU(0, 0), PIU(0, 0), PIU(0, 0), PIU(0, 0),
-                     PIU(0, 0), PIU(0, 0), PIU(0, 0), PIU(0, 0), PIU(13, 1)
-                    };
+    DeleteArrPtr(graph);
+
+    PIU answers[][2] = {{PIU(7, 1), PIU(7, 2)}, {PIU(0, 1), PIU(0, 0)}, {PIU(0, 2), PIU(0, 0)},
+      {PIU(0, 1), PIU(0, 0)}, {PIU(0, 2), PIU(0, 0)}, {PIU(0, 2), PIU(0, 0)},
+      {PIU(7, 1), PIU(7, 2)}, {PIU(0, 0), PIU(0, 0)}, {PIU(7, 1), PIU(10, 2)}, {PIU(7, 2), PIU(10, 1)},
+      {PIU(0, 0), PIU(0, 0)}, {PIU(10, 1), PIU(10, 2)}, {PIU(10, 1), PIU(10, 2)},
+      {PIU(7, 1), PIU(10, 1)}, {PIU(13, 1), PIU(0, 0)}
+    };
 
     for (int u = 0; u < sz; u++) {
       if (GC.nodesIndex[u].type == TreeNodeType) {
-        printf("Node: %d, EntryNode: %d, dist: %d\n", u,
-               GC.nodesIndex[u].attr[0].first, GC.nodesIndex[u].attr[0].second);
-
-      } else if (GC.nodesIndex[u].type == ChainNodeType) {
-        for (auto& attr : GC.nodesIndex[u].attr) {
-          printf("Node: %d, EndNode: %d, dist: %d\n", u,
-                 attr.first, attr.second);
+        if (!(GC.nodesIndex[u].attr[0].first == answers[u][0].first &&
+              GC.nodesIndex[u].attr[0].second == answers[u][0].second)) {
+          printf("Should be Node: %d, EntryNode: %d, dist: %d\n", u,
+                 answers[u][0].first, answers[u][0].second);
+          printf("Ouput  Node: %d, EntryNode: %d, dist: %d\n", u,
+                 GC.nodesIndex[u].attr[0].first, GC.nodesIndex[u].attr[0].second);
+          return;
         }
-      }
-      if ((GC.nodesIndex[u].type != 0 && answers[u].second == 0) ||
-          (GC.nodesIndex[u].attr[0].first == answers[u].first && GC.nodesIndex[u].attr[0].second == answers[u].second)) {
-      } else {
-        printf("Failed tests at Node %d\n", u);
-        printf("Output (%d, %d)\n", GC.nodesIndex[u].attr[0].first, GC.nodesIndex[u].attr[0].second);
-        printf("Answer (%d, %d)\n", answers[u].first, answers[u].second);
-        return;
+      } else if (GC.nodesIndex[u].type == ChainNodeType) {
+        int i = 0;
+        sort(GC.nodesIndex[u].attr.begin(), GC.nodesIndex[u].attr.end());
+        for (auto& attr : GC.nodesIndex[u].attr) {
+          if (!(attr.first == answers[u][i].first && attr.second == answers[u][i].second)) {
+            printf("Should be Node: %d, EndNode: %d, dist: %d\n", u,
+                   answers[u][i].first, answers[u][i].second);
+            printf("Ouput  Node: %d, EndNode: %d, dist: %d\n", u,
+                   attr.first, attr.second);
+            return;
+          }
+          i++;
+        }
       }
     }
     printf("Graph has been compressed into %d vertices\n", compressedGraphVertices);

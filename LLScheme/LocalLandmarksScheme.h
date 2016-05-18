@@ -3,6 +3,7 @@
 
 #include "CommonHeader.h"
 #include "GraphCompression.h"
+#include "Graph.h"
 #include "TreeStruct.h"
 
 #include <algorithm>
@@ -56,16 +57,23 @@ public:
 private:
 
   int numVertices;
-  std::vector<TreeStruct*> SPTree;
+  int compressedGraphEdges = 0;
+  std::vector<Graph*> GraphPtrVec;
   int* rank = NULL;
+  int* whichComponent = NULL;
   std::bitset<maxnode> vis;
+  GPtr iniGraph = NULL;
 
   // Statistics
   double timeLoad, timeIndexing;
 
   int dfs(const std::vector<std::vector<Edge> >& graph, int u, int dep);
 
-  bool isGraphConnected(const std::vector<std::vector<Edge> >& graph);
+  std::vector<int> parseConnectedGraph(int root, std::vector<std::pair<int, Edge> >& edges, int component);
+
+  void rankNodes();
+
+  bool isGraphConnected(ConstGPtr graph);
 };
 
 template<int NumSelectedLandmarks>
@@ -100,7 +108,7 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
     V = std::max(V, std::max(es[i].first, es[i].second) + 1);
   }
 
-  std::vector<std::vector<Edge> > iniGraph(V);
+  iniGraph = new std::vector<Edge>[V];
   for (size_t i = 0; i < es.size(); ++i) {
     int v = es[i].first, w = es[i].second;
     if (w == v) {
@@ -119,63 +127,42 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
     }
   }
 
-//  assert(isGraphConnected(iniGraph) == true);
   timeLoad += GetCurrentTimeSec();
 
   // Order vertices by decreasing order of degree
 
   timeIndexing = -GetCurrentTimeSec();
   {
-    // Order
-    GraphCompression GC(numVertices, iniGraph);
-
-    std::vector<std::vector<Edge> > compressedGraph(numVertices);
-    int compressedGraphVertices = GC.compressGraph(compressedGraph);
-    MSG("Compressed Nodes to: ", compressedGraphVertices);
-    return true;
-
-    std::vector<std::pair<float, int> > deg(compressedGraphVertices);
-    int &VN = compressedGraphVertices;
-
-    for (int v = 0; v < VN; ++v) {
-      // We add a random value here to diffuse nearby vertices
-      if (compressedGraph[v].size() > 0) {
-        deg[v] = std::make_pair(compressedGraph[v].size() + float(rand()) / RAND_MAX, v);
-      }
-    }
-    std::sort(deg.rbegin(), deg.rend());
-
-    // Relabel the vertex IDs
-    rank = new int[VN];
-    for (int i = 0; i < VN; ++i) rank[deg[i].second] = i;
-    std::vector<std::vector<Edge> > relabelGraph(VN);
-    for (int v = 0; v < VN; ++v) {
-      for (auto& e : compressedGraph[v]) {
-        relabelGraph[rank[v]].push_back(Edge(rank[e.v], e.d));
-      }
+    whichComponent = new int[V];
+    rank = new int[V];
+    for (int v = 0; v < V; v++) {
+      rank[v] = -1;
+      whichComponent[v] = -1;
     }
 
-    // construct NumSelectedLandmarks SPTree and index on compressedGraph
-    // except the first one built on iniGraph
-    {
-      // build SPTree on iniGraph
-      TreeStruct* ts = new TreeStruct(0, numVertices);
-      ts->constructIndex(iniGraph);
-      SPTree.push_back(ts);
+    vis.reset();
+    int componentCnt = 0;
+    int mx = 0;
+    for (int v = 0; v < V; v++) {
 
-      // build NumSelectedLandmarks - 1 SPTree on compressedGraph
-      // select NumSelectedLandmarks landmarks by degrees
-
-      for (int i = 0; i < NumSelectedLandmarks - 1; i++) {
-        ts = new TreeStruct(i, compressedGraphVertices);
-        ts->constructIndex(compressedGraph);
-        SPTree.push_back(ts);
+      if (vis[v] == 0 && iniGraph[v].size() > 0) {
+//        Debug(v);
+        std::vector<std::pair<int, Edge> > edges;
+        std::vector<int> vertices = parseConnectedGraph(v, edges, componentCnt);
+        componentCnt++;
+        Graph* graphPtr = new Graph(vertices, edges, iniGraph, rank);
+        GraphPtrVec.push_back(graphPtr);
+        if (GraphPtrVec[mx]->numVertices < GraphPtrVec.back()->numVertices) {
+          mx = GraphPtrVec.size() - 1;
+        }
       }
     }
+    GraphPtrVec[0]->constructIndex(2);
+    MSG("Parse graph: ", GraphPtrVec.size());
   }
 
   timeIndexing += GetCurrentTimeSec();
-// Debug(1);
+  printStatistics();
   return true;
 }
 
@@ -186,12 +173,7 @@ int LocalLandmarksScheme<NumSelectedLandmarks>
   if (u >= numVertices || v >= numVertices) {
     return distance;
   }
-  for (auto treeResult : SPTree) {
-    int val = treeResult->TreeStruct::queryDistance(rank[u], rank[v]);
-    if (distance > val) {
-      distance = val;
-    }
-  }
+
   return distance;
 }
 
@@ -201,6 +183,32 @@ void LocalLandmarksScheme<NumSelectedLandmarks>
   printf("Load Graph with %d vertices\n", numVertices);
   printf("TimeLoad: %.6fs TimeIndexed: %.6fs\n", timeLoad, timeIndexing);
 }
+
+template<int NumSelectedLandmarks>
+std::vector<int> LocalLandmarksScheme<NumSelectedLandmarks>
+::parseConnectedGraph(int root, std::vector<std::pair<int, Edge> >& edges, int component) {
+  std::queue<int> que;
+  que.push(root);
+  vis[root] = 1;
+  std::vector<int> vec;
+
+  while (!que.empty()) {
+    int u = que.front();
+    que.pop();
+    whichComponent[u] = component;
+    vec.push_back(u);
+
+    for (auto e : iniGraph[u]) {
+      edges.push_back(std::pair<int, Edge>(u, e));
+      if (vis[e.v] != 1) {
+        que.push(e.v);
+        vis[e.v] = 1;
+      }
+    }
+  }
+  return vec;
+}
+
 template<int NumSelectedLandmarks>
 int LocalLandmarksScheme<NumSelectedLandmarks>
 ::dfs(const std::vector<std::vector<Edge> >& graph, int u, int dep) {
@@ -215,13 +223,37 @@ int LocalLandmarksScheme<NumSelectedLandmarks>
   }
   return cnt;
 }
+template<int NumSelectedLandmarks>
+void LocalLandmarksScheme<NumSelectedLandmarks>
+::rankNodes() {
+  std::vector<std::pair<float, int> > deg(numVertices);
+
+  int verticesCnt = 0;
+  for (int v = 0; v < numVertices; ++v) {
+    // We add a random value here to diffuse nearby vertices
+    if (iniGraph[v].size() > 0) {
+      deg[verticesCnt++] = std::make_pair(iniGraph[v].size() + float(rand()) / RAND_MAX, v);
+    }
+  }
+
+  std::sort(deg.rbegin(), deg.rend());
+
+  rank = new int[numVertices];
+  for (int i = 0; i < numVertices; i++) {
+    rank[i] = -1;
+  }
+  for (int i = 0; i < verticesCnt; ++i) {
+    rank[deg[i].second] = i;
+  }
+}
 
 template<int NumSelectedLandmarks>
 bool LocalLandmarksScheme<NumSelectedLandmarks>
-::isGraphConnected(const std::vector<std::vector<Edge> >& graph) {
+::isGraphConnected(ConstGPtr graph) {
   std::queue<int> que;
   que.push(0);
   int cnt = 1;
+  vis.reset();
   vis[0] = 1;
   while (que.size()) {
     int u = que.front();
@@ -236,15 +268,18 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
       que.push(v);
     }
   }
-  Debug(cnt);
-  return cnt == 77360;
+//  Debug(cnt);
+  return cnt == numVertices;
 }
 
 template<int NumSelectedLandmarks>
 void LocalLandmarksScheme<NumSelectedLandmarks>
 ::Free() {
   DeleteArrPtr(rank);
-  for (auto &ptr : SPTree) {
+  DeleteArrPtr(iniGraph);
+  DeleteArrPtr(whichComponent);
+
+  for (auto &ptr : GraphPtrVec) {
     DeletePtr(ptr);
   }
 }

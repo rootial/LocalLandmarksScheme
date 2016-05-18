@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1463495770 source:e:\github\locallandmarksscheme\llscheme\main.cpp
+1463584273 source:e:\github\locallandmarksscheme\llscheme\main.cpp
 	"LocalLandmarksScheme.h"
 	"TestUnit.h"
 	<malloc.h>
@@ -17,15 +17,16 @@
 	<algorithm>
 	<fstream>
 
-1463480622 e:\github\locallandmarksscheme\llscheme\graphcompression.h
+1463572415 e:\github\locallandmarksscheme\llscheme\graphcompression.h
 	"CommonHeader.h"
 	<cstdint>
 	<cstdlib>
 	<vector>
 
-1463496829 e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.h
+1463584947 e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.h
 	"CommonHeader.h"
 	"GraphCompression.h"
+	"Graph.h"
 	"TreeStruct.h"
 	<algorithm>
 	<cstdlib>
@@ -34,7 +35,7 @@
 	<vector>
 	<iostream>
 
-1463476763 e:\github\locallandmarksscheme\llscheme\treestruct.h
+1463581120 e:\github\locallandmarksscheme\llscheme\treestruct.h
 	"CommonHeader.h"
 	<bitset>
 	<cstdio>
@@ -45,7 +46,7 @@
 1463389176 e:\github\locallandmarksscheme\llscheme\common.h
 	<stdint.h>
 
-1463496830 source:e:\github\locallandmarksscheme\llscheme\graphcompression.cpp
+1463581120 source:e:\github\locallandmarksscheme\llscheme\graphcompression.cpp
 	"CommonHeader.h"
 	"GraphCompression.h"
 	<algorithm>
@@ -58,7 +59,7 @@
 	<algorithm>
 	<queue>
 
-1463486692 source:e:\github\locallandmarksscheme\llscheme\treestruct.cpp
+1463552560 source:e:\github\locallandmarksscheme\llscheme\treestruct.cpp
 	"CommonHeader.h"
 	"TreeStruct.h"
 
@@ -77,7 +78,7 @@
 	<sys/time.h>
 	<vector>
 
-1463486706 e:\github\locallandmarksscheme\llscheme\commonheader.h
+1463561040 e:\github\locallandmarksscheme\llscheme\commonheader.h
 	<cassert>
 	<cstdio>
 	<bitset>
@@ -90,9 +91,18 @@
 	"GraphCompression.h"
 	<cstdio>
 
-1463482318 e:\github\locallandmarksscheme\llscheme\testunit.h
+1463560237 e:\github\locallandmarksscheme\llscheme\testunit.h
 	"CommonHeader.h"
 	"LocalLandmarksScheme.h"
 	"GraphCompression.h"
 	<cstdio>
+
+1463584875 source:e:\github\locallandmarksscheme\llscheme\graph.cpp
+	"CommonHeader.h"
+	"GraphCompression.h"
+	"Graph.h"
+
+1463584454 e:\github\locallandmarksscheme\llscheme\graph.h
+	<algorithm>
+	<cstdlib>
 

@@ -36,4 +36,8 @@ struct Edge {
   }
 };
 
+typedef std::vector<Edge>(*GPtr);
+typedef const std::vector<Edge>(*ConstGPtr);
+typedef std::vector<std::vector<Edge> > GraphType;
+
 #endif // COMMONHEADER_H_INCLUDED
