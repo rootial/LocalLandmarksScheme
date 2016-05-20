@@ -34,18 +34,16 @@ typedef std::priority_queue<Node> pq;
 class TreeStruct {
 public:
   std::vector<int> *tree = NULL;
-  int *distance = NULL;
 
   void constructIndex();
 
   int queryDistance(int x, int y);
 
   TreeStruct(int root, int numVertices,
-             const std::vector<std::vector<Edge> >& g): graph(g), root(root), numVertices(numVertices) {
+             ConstGPtr g): graph(g), root(root), numVertices(numVertices) {
     tree = new std::vector<int>[numVertices];
     distance = new int[numVertices];
     level = new int[numVertices * 2];
-    trace = new int[numVertices * 2];
     label = new int[numVertices];
     parent = new int[numVertices];
   }
@@ -53,7 +51,8 @@ public:
   virtual ~TreeStruct();
 
 private:
-  const std::vector<std::vector<Edge> >& graph;
+  ConstGPtr graph;
+  std::bitset < 1 << maxBlockSize > vis;
 
   int root;
   int numVertices;
@@ -62,22 +61,20 @@ private:
   int treeNodesNums;
   int indexSize;
 
-  std::bitset < 1 << maxBlockSize > visited;
-
+  int *distance = NULL;
   int *level = NULL;
-  int *trace = NULL;
   int *label = NULL;
   int *parent = NULL;
 
-  std::vector<std::vector<int>> *maskMinIndex = NULL;
+  std::vector<std::vector<uint8_t>> *maskMinIndex = NULL;
   std::vector<int> *minIndexOnBlock = NULL;
-  int *maskOfBlock = NULL;
+  short *maskOfBlock = NULL;
 
   void buildSPTree();
 
   void dfs(int u, int fa);
 
-  int getLCA(int x, int y);
+  int getLcaDistance(int x, int y);
 
   int RMQ(int x, int y);
 

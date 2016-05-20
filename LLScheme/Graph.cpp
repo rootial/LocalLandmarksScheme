@@ -3,50 +3,65 @@
 #include "Graph.h"
 
 int Graph::queryDistance(int x, int y) {
-  return 1;
+  if (x < 0 || y < 0 || x >= numVertices || y >= numVertices) {
+    return INF8;
+  }
+
+  if (x == y) {
+    return 0;
+  }
+  return headGraphPtr->queryDistance(x, y);
 }
 
-int Graph::constructIndex(int times) {
+int Graph::constructIndex(int times, int NumSelectedLandmarks) {
+  int cVertices = numVertices;
+  auto ptrGraph = graph;
 
-  GraphCompression GC(numVertices, graph);
-  int cVertices = GC.compressGraph();
-  auto ptrGraph = GC.cGraph;
-  printf("Compressed to %d nodes in %d round\n", cVertices, 0);
-  std::vector<GraphCompression*> vecGCPtr;
+  GraphCompression* lastGraphPtr = NULL;
 
   for (int k = 0; k < times; k++) {
-    GraphCompression* GCPtr = new GraphCompression(cVertices, ptrGraph);
+    GraphCompression* GraphCompressionPtr = new GraphCompression(cVertices, ptrGraph);
 
-    cVertices = GCPtr->compressGraph();
-//      Debug(k);
-    printf("Compressed to %d nodes in %d round\n", cVertices, k + 1);
-    ptrGraph = GCPtr->cGraph;
-    vecGCPtr.push_back(GCPtr);
+    if (headGraphPtr == NULL) {
+      headGraphPtr = GraphCompressionPtr;
+    } else {
+      lastGraphPtr->nextGraph = GraphCompressionPtr;
+    }
+    cVertices = GraphCompressionPtr->compressGraph();
+
+    if (k == times - 1) {
+//      printf("Start to Construct Index on %dth Compressed Graph\n", index);
+
+      GraphCompressionPtr->constructIndex(NumSelectedLandmarks);
+
+//      printf("Finish Construct Index on %dth Compressed Graph\n", index);
+    } else {
+//      printf("Start to Construct Index on %dth Compressed Graph\n", index);
+
+      GraphCompressionPtr->constructIndex(1);
+
+//      printf("Finish Construct Index on %dth Compressed Graph\n", index);
+    }
+
+    if (lastGraphPtr != NULL) {
+      DeleteArrPtr(lastGraphPtr->cGraph);
+    }
+//    MSG("nodes", cVertices);
+    ptrGraph = GraphCompressionPtr->cGraph;
+    vecGCPtr.push_back(GraphCompressionPtr);
+    lastGraphPtr = GraphCompressionPtr;
   }
 
-  for (int k = 0; k < times; k++) {
-    delete vecGCPtr[k];
-  }
-//  // construct NumSelectedLandmarks SPTree and index on compressedGraph
-//  // except the first one built on iniGraph
-//  {
-//    // build SPTree on iniGraph
-//    TreeStruct* ts = new TreeStruct(0, numVertices, iniGraph);
-//    ts->constructIndex();
-//    SPTree.push_back(ts);
-//
-//    // build NumSelectedLandmarks - 1 SPTree on compressedGraph
-//    // select NumSelectedLandmarks landmarks by degrees
-//
-//    for (int i = 0; i < NumSelectedLandmarks - 1; i++) {
-//      ts = new TreeStruct(i, compressedGraphVertices, relabelGraph);
-//      ts->constructIndex();
-//      SPTree.push_back(ts);
-//    }
-//  }
+  // construct NumSelectedLandmarks SPTree and index on compressedGraph
+  DeleteArrPtr(graph);
   return times;
 }
 
 void Graph::Free() {
   DeleteArrPtr(graph);
+  DeletePtr(headGraphPtr);
+}
+
+Graph::~Graph() {
+  Free();
 }

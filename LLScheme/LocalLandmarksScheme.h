@@ -2,7 +2,6 @@
 #define LOCALLANDMARKSSCHEME_H_INCLUDED
 
 #include "CommonHeader.h"
-#include "GraphCompression.h"
 #include "Graph.h"
 #include "TreeStruct.h"
 
@@ -90,8 +89,10 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
   for (int v, w; ifs >> v >> w; ) {
     es.push_back(std::make_pair(v, w));
   }
+
   if (ifs.bad()) return false;
   constructIndex(es);
+
   return true;
 }
 
@@ -130,7 +131,6 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
   timeLoad += GetCurrentTimeSec();
 
   // Order vertices by decreasing order of degree
-
   timeIndexing = -GetCurrentTimeSec();
   {
     whichComponent = new int[V];
@@ -139,29 +139,26 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
       rank[v] = -1;
       whichComponent[v] = -1;
     }
-
     vis.reset();
     int componentCnt = 0;
     int mx = 0;
     for (int v = 0; v < V; v++) {
-
       if (vis[v] == 0 && iniGraph[v].size() > 0) {
-//        Debug(v);
         std::vector<std::pair<int, Edge> > edges;
         std::vector<int> vertices = parseConnectedGraph(v, edges, componentCnt);
-        componentCnt++;
+//        MSG("vertices num: ", vertices.size());
         Graph* graphPtr = new Graph(vertices, edges, iniGraph, rank);
+
         GraphPtrVec.push_back(graphPtr);
         if (GraphPtrVec[mx]->numVertices < GraphPtrVec.back()->numVertices) {
           mx = GraphPtrVec.size() - 1;
         }
+        GraphPtrVec[componentCnt++]->constructIndex(4, NumSelectedLandmarks);
       }
     }
-    GraphPtrVec[0]->constructIndex(2);
-    MSG("Parse graph: ", GraphPtrVec.size());
   }
-
   timeIndexing += GetCurrentTimeSec();
+  DeleteArrPtr(iniGraph);
   printStatistics();
   return true;
 }
@@ -169,11 +166,19 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
 template<int NumSelectedLandmarks>
 int LocalLandmarksScheme<NumSelectedLandmarks>
 ::queryDistance(int u, int v) {
+
   int distance = INF8;
-  if (u >= numVertices || v >= numVertices) {
+  if (u < 0 || v < 0 || u >= numVertices || v >= numVertices ||
+      rank[u] == -1 || rank[v] == -1) {
     return distance;
   }
-
+  if (u == v) {
+    return 0;
+  }
+  if (whichComponent[u] == whichComponent[v]) {
+    int id = whichComponent[u];
+    distance = GraphPtrVec[id]->queryDistance(rank[u], rank[v]);
+  }
   return distance;
 }
 
@@ -232,7 +237,7 @@ void LocalLandmarksScheme<NumSelectedLandmarks>
   for (int v = 0; v < numVertices; ++v) {
     // We add a random value here to diffuse nearby vertices
     if (iniGraph[v].size() > 0) {
-      deg[verticesCnt++] = std::make_pair(iniGraph[v].size() + float(rand()) / RAND_MAX, v);
+      deg[verticesCnt++] = std::make_pair(iniGraph[v].size() + rand() / (RAND_MAX + 1.0), v);
     }
   }
 
@@ -268,7 +273,6 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
       que.push(v);
     }
   }
-//  Debug(cnt);
   return cnt == numVertices;
 }
 
@@ -278,7 +282,6 @@ void LocalLandmarksScheme<NumSelectedLandmarks>
   DeleteArrPtr(rank);
   DeleteArrPtr(iniGraph);
   DeleteArrPtr(whichComponent);
-
   for (auto &ptr : GraphPtrVec) {
     DeletePtr(ptr);
   }

@@ -7,8 +7,6 @@
 #include <queue>
 #include <vector>
 
-typedef std::pair<int, uint8_t> PIU;
-
 const int maxnode = 2000000;
 const int maxBlockSize = 16;
 const uint8_t INF8 = 100;
@@ -17,8 +15,8 @@ const int ChainNodeType = 1;
 const int OtherNodeType = 2;
 
 
-#define DeletePtr(x) {if (x != NULL) {delete x; x = NULL;}}
-#define DeleteArrPtr(x) {if (x != NULL) {delete []x; x = NULL;}}
+#define DeletePtr(x) {if ((x) != NULL) {delete (x); x = NULL;}}
+#define DeleteArrPtr(x) {if ((x) != NULL) {delete [](x); x = NULL;}}
 #define Debug(x) printf("Excute here %d lines\n", (x))
 #define MSG(str, x) printf("%s: %d\n", str, x)
 

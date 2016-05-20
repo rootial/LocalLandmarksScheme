@@ -35,6 +35,10 @@
 		<Unit filename="CommonHeader.h">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="Graph.cpp" />
+		<Unit filename="Graph.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="GraphCompression.cpp" />
 		<Unit filename="GraphCompression.h">
 			<Option target="&lt;{~None~}&gt;" />

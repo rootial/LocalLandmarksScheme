@@ -41,7 +41,6 @@ void TreeStruct::buildSPTree() {
 
 void TreeStruct::dfs(int u, int fa) {
   label[u] = indexSize;
-  trace[indexSize] = u;
   level[indexSize++] = distance[u];
   treeNodesNums++;
   for (auto &v : tree[u]) {
@@ -49,18 +48,21 @@ void TreeStruct::dfs(int u, int fa) {
       continue;
     }
     dfs(v, u);
-    trace[indexSize] = u;
     level[indexSize++] = distance[u];
   }
 }
 
 void TreeStruct::constructIndex() {
   buildSPTree();
+
   indexSize = 0;
   treeNodesNums = 0;
 
   dfs(root, -1);
 
+  DeleteArrPtr(distance);
+  DeleteArrPtr(tree);
+  DeleteArrPtr(parent);
 
 //  Debug(nodesNumbers);
   blockSize = -1;
@@ -74,10 +76,11 @@ void TreeStruct::constructIndex() {
 //  Debug(blockSize);
 //  Debug(blockNums);
 
-  maskMinIndex = new std::vector<std::vector<int>>[1 << blockSize];
-  maskOfBlock = new int[blockNums];
+  maskMinIndex = new std::vector<std::vector<uint8_t>>[1 << blockSize];
+  maskOfBlock = new short[blockNums];
   minIndexOnBlock = new std::vector<int>[blockNums];
 
+  vis.reset();
   for (int index = 0; index < indexSize; index++) {
 
     int blockID = index / blockSize;
@@ -103,6 +106,7 @@ void TreeStruct::constructIndex() {
     }
   }
 
+  vis.reset();
 
   for (int blockStartIndex = 0, blockID = 0; blockStartIndex < indexSize; blockStartIndex += blockSize) {
     int mask = 0;
@@ -112,14 +116,16 @@ void TreeStruct::constructIndex() {
         mask |= (1 << index);
       }
     }
-    maskOfBlock[blockID++] = (mask);
-    if (visited[mask]) {
+
+    maskOfBlock[blockID++] = mask;
+
+    if (vis[mask] == 1) {
       continue;
     }
-    visited[mask] = 1;
+    vis[mask] = 1;
 
     for (int index = 0; blockStartIndex + index < indexSize && index < blockSize; index++) {
-      std::vector<int> minIndexSubArray;
+      std::vector<uint8_t> minIndexSubArray;
       int minIndex = index;
       for (int indey = index; blockStartIndex + indey < indexSize && indey < blockSize; indey++) {
         if (level[blockStartIndex + minIndex] > level[blockStartIndex + indey]) {
@@ -174,30 +180,27 @@ int TreeStruct::RMQ(int x, int y) {
   return minIndex;
 }
 
-int TreeStruct::getLCA(int a, int b) {
+int TreeStruct::getLcaDistance(int a, int b) {
   // node a and b don't have lca because they don't exit on the same SPTree
-  if (distance[a] == INF8 || distance[b] == INF8 ||
-      a >= numVertices || b >= numVertices) {
-    return -1;
-  }
   int x = label[a], y = label[b];
+  if (level[x] == INF8 || level[y] == INF8) {
+    return INF8;
+  }
   int minIndex = RMQ(x, y);
-  return trace[minIndex];
+  return level[minIndex];
 }
 
 int TreeStruct::queryDistance(int a, int b) {
-  int lca = getLCA(a, b);
-  if (lca != -1) {
-    return distance[a] + distance[b] - 2 * distance[lca];
+  if (a < 0 || b < 0 || a >= numVertices || b >= numVertices) {
+    return INF8;
   }
-  return INF8;
+  int lcaDistance = getLcaDistance(a, b);
+  return level[label[a]] + level[label[b]] - 2 * lcaDistance;
 }
 
 void TreeStruct::Free() {
-// puts("destroy TreeStruct");
   DeleteArrPtr(distance);
   DeleteArrPtr(level);
-  DeleteArrPtr(trace);
   DeleteArrPtr(label);
   DeleteArrPtr(parent);
 
@@ -210,6 +213,5 @@ void TreeStruct::Free() {
 TreeStruct::~TreeStruct() {
   TreeStruct::Free();
 }
-
 
 

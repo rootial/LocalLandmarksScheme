@@ -1,6 +1,7 @@
 #ifndef GRAPHCOMPRESSION_H_INCLUDED
 #define GRAPHCOMPRESSION_H_INCLUDED
 #include "CommonHeader.h"
+#include "TreeStruct.h"
 
 #include <cstdint>
 #include <cstdlib>
@@ -10,13 +11,17 @@ class GraphCompression {
 public:
   // vertices of compressed graph
   int cVertices = 0;
+  int chainCnt = 0;
 
   int* rank = NULL;
   std::vector<Edge>* cGraph = NULL;
+  std::vector<TreeStruct*> SPTree;
+  const GraphCompression* nextGraph = NULL;
 
   struct IndexType {
     int type;
-    std::vector<PIU> attr;
+    int chainNo;
+    std::vector<Edge> attr;
     IndexType() {
       type = OtherNodeType;
     }
@@ -25,9 +30,17 @@ public:
   IndexType* nodesIndex = NULL;
 
   GraphCompression(int n, ConstGPtr g):
-    numVertices(n), graph(g) {}
+    numVertices(n), graph(g) {
+    chainCnt = 0;
+  }
 
   int compressGraph();
+
+  int queryDistance(int x, int y) const;
+
+  int queryDistanceOnNextCompressedGraph(int x, int y) const;
+
+  void constructIndex(int num);
 
   bool loadGraph(int n, ConstGPtr g) {
     if (g != NULL) {
@@ -38,8 +51,16 @@ public:
     return false;
   }
 
-private:
+  bool setNextGraph(const GraphCompression* ptr) {
+    nextGraph = ptr;
+    return ptr != NULL;
+  }
 
+  void FreeNoUseMem();
+
+  ~GraphCompression();
+
+private:
   // vertices of initial graph
   int numVertices;
   ConstGPtr graph = NULL;
@@ -47,12 +68,7 @@ private:
 
   void relabelGraph();
   void dfsGoThroughTreeNodes(int root, int u, int fa, int dep);
-  void Free() {
-    DeleteArrPtr(cGraph);
-    DeleteArrPtr(compressedGraph);
-    DeleteArrPtr(nodesIndex);
-    DeleteArrPtr(rank);
-  }
+  void Free();
 };
 
 #endif // GRAPHCOMPRESSION_H_INCLUDED
