@@ -9,12 +9,22 @@ class Graph {
 public:
   int numVertices;
 
-  int queryDistance(int x, int y);
+  int queryDistanceLLS(int x, int y);
 
-  int constructIndex(int times, int NumSelectedLandmarks);
+  int queryDistanceGLS(int x, int y);
+
+  int queryDistanceExactDijk(int x, int y);
+
+  int queryDistanceExact(int x, int y);
+
+  bool constructIndexLLS(int times, int NumSelectedLandmarks);
+
+  bool constructIndexGLS(int NumSelectedLandmarks);
+
+  std::vector<std::pair<int, int> > outputEdges();
 
   Graph(const std::vector<int> &vertices, const std::vector<std::pair<int, Edge> >& edges,
-        const std::vector<Edge>* iniGraph,  int* rank): rank(rank) {
+        const std::vector<Edge>* iniGraph,  int* rank) {
 
     numVertices = vertices.size();
     std::vector<std::pair<float, int> > deg(numVertices);
@@ -33,6 +43,7 @@ public:
     }
 
     graph = new std::vector<Edge>[numVertices];
+
     for (auto e : edges) {
       Edge E = e.second;
       int u = e.first;
@@ -42,14 +53,32 @@ public:
     }
   }
 
+  Graph(int num, ConstGPtr iniGraph): numVertices(num) {
+    graph = new std::vector<Edge>[numVertices];
+    for (int u = 0; u < numVertices; u++) {
+      for (auto e : iniGraph[u]) {
+        graph[u].push_back(e);
+      }
+    }
+  }
+
   virtual ~Graph();
 
 private:
   std::vector<GraphCompression*> vecGCPtr;
+  std::vector<TreeStruct*> GLSSPtree;
+
+  int* dist = NULL;
+  int* dist1 = NULL;
+  int* dist2 = NULL;
+  int* done1 = NULL;
+  int* done2 = NULL;
+
+  std::bitset<maxnode> vis;
 
   GraphCompression* headGraphPtr = NULL;
   GPtr graph = NULL;
-  int* rank = NULL;
+
   void Free();
 };
 

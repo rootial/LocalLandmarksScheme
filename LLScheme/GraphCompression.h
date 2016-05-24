@@ -36,11 +36,11 @@ public:
 
   int compressGraph();
 
-  int queryDistance(int x, int y) const;
+  int queryDistanceLLS(int x, int y) const;
 
   int queryDistanceOnNextCompressedGraph(int x, int y) const;
 
-  void constructIndex(int num);
+  void constructIndexLLS(int num);
 
   bool loadGraph(int n, ConstGPtr g) {
     if (g != NULL) {
@@ -55,8 +55,6 @@ public:
     nextGraph = ptr;
     return ptr != NULL;
   }
-
-  void FreeNoUseMem();
 
   ~GraphCompression();
 

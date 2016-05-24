@@ -1,9 +1,12 @@
 #ifndef COMMONHEADER_H_INCLUDED
 #define COMMONHEADER_H_INCLUDED
+
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <bitset>
 #include <cstdint>
+#include <fstream>
 #include <queue>
 #include <vector>
 
@@ -13,7 +16,6 @@ const uint8_t INF8 = 100;
 const int TreeNodeType = 0;
 const int ChainNodeType = 1;
 const int OtherNodeType = 2;
-
 
 #define DeletePtr(x) {if ((x) != NULL) {delete (x); x = NULL;}}
 #define DeleteArrPtr(x) {if ((x) != NULL) {delete [](x); x = NULL;}}
@@ -34,8 +36,19 @@ struct Edge {
   }
 };
 
+struct Node {
+  int u, d;
+  Node() {}
+  Node(int u, int d): u(u), d(d) {}
+  bool operator < (const Node& o) const {
+    return d > o.d;
+  }
+};
+
 typedef std::vector<Edge>(*GPtr);
 typedef const std::vector<Edge>(*ConstGPtr);
 typedef std::vector<std::vector<Edge> > GraphType;
+
+typedef std::priority_queue<Node> pq;
 
 #endif // COMMONHEADER_H_INCLUDED

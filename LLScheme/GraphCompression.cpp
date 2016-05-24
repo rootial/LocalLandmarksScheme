@@ -5,21 +5,21 @@
 #include <vector>
 
 // remove empty vertices and rank
-// them by degrees, relabel them
+// them by degrees, then relabel them
 
 int GraphCompression::queryDistanceOnNextCompressedGraph(int x, int y) const {
   int ans = INF8;
   if (nextGraph == NULL) {
     for (size_t i = 1; i < SPTree.size(); i++) {
-      ans = std::min(ans, SPTree[i]->queryDistance(x, y));
+      ans = std::min(ans, SPTree[i]->queryDistanceLLS(x, y));
     }
   } else {
-    ans = std::min(ans, nextGraph->queryDistance(x, y));
+    ans = std::min(ans, nextGraph->queryDistanceLLS(x, y));
   }
   return ans;
 }
 
-int GraphCompression::queryDistance(int x, int y) const {
+int GraphCompression::queryDistanceLLS(int x, int y) const {
   if (x < 0 || y < 0 || x >= numVertices || y >= numVertices) {
     return INF8;
   }
@@ -33,7 +33,7 @@ int GraphCompression::queryDistance(int x, int y) const {
     // x, y is on the same incident tree and calculate the
     // distance by index on uncompressed Graph
     if (nodesIndex[x].attr[0].v == nodesIndex[y].attr[0].v) {
-      ans = SPTree[0]->queryDistance(x, y);
+      ans = SPTree[0]->queryDistanceLLS(x, y);
     } else {
       int nx = rank[nodesIndex[x].attr[0].v];
       int ny = rank[nodesIndex[y].attr[0].v];
@@ -58,16 +58,21 @@ int GraphCompression::queryDistance(int x, int y) const {
   return ans;
 }
 
-void GraphCompression::constructIndex(int NumSelectedLandmarks) {
+void GraphCompression::constructIndexLLS(int NumSelectedLandmarks) {
   TreeStruct* ts = new TreeStruct(0, numVertices, graph);
-  ts->constructIndex();
+  ts->constructIndexLLS();
   SPTree.push_back(ts);
 
   // build NumSelectedLandmarks - 1 SPTree on compressedGraph
   // select NumSelectedLandmarks landmarks by degrees
-  for (int i = 0; i < std::min(NumSelectedLandmarks - 1, cVertices); i++) {
-    ts = new TreeStruct(i, cVertices, cGraph);
-    ts->constructIndex();
+  std::vector<int> num;
+  for (int i = 0; i < cVertices; i++) {
+    num.push_back(i);
+  }
+  std::random_shuffle(num.begin(), num.end());
+  for (int i = 0; i < std::min(NumSelectedLandmarks, cVertices); i++) {
+    ts = new TreeStruct(num[i], cVertices, cGraph);
+    ts->constructIndexLLS();
     SPTree.push_back(ts);
   }
 }
@@ -267,12 +272,12 @@ int GraphCompression::compressGraph() {
         }
       }
 
-/*      // order the end nodes
-      if (nodesIndex[v].type == ChainNodeType) {
-        if (nodesIndex[v].attr[1].v < nodesIndex[v].attr[0].v) {
-          std::swap(nodesIndex[v].attr[0], nodesIndex[v].attr[1]);
-        }
-      }*/
+      /*      // order the end nodes
+            if (nodesIndex[v].type == ChainNodeType) {
+              if (nodesIndex[v].attr[1].v < nodesIndex[v].attr[0].v) {
+                std::swap(nodesIndex[v].attr[0], nodesIndex[v].attr[1]);
+              }
+            }*/
     }
     // add the the remaing nodes as representative of itself
     for (int v = 0; v < numVertices; v++) {
@@ -297,10 +302,6 @@ void GraphCompression::Free() {
   for (auto &ptr : SPTree) {
     DeletePtr(ptr);
   }
-}
-
-void GraphCompression::FreeNoUseMem() {
-  DeleteArrPtr(graph);
 }
 
 GraphCompression::~GraphCompression() {

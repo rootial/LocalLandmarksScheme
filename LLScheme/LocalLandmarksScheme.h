@@ -12,21 +12,28 @@
 #include <vector>
 #include <iostream>
 
-
-template<int NumSelectedLandmarks = 10>
+template<int NumSelectedLandmarks = 20>
 class LocalLandmarksScheme {
 public:
   // Constructs an index from a graph, given as a list of edges.
   // Vertices should be described by numbers starting from zero.
   // Returns |true| when successful.
-  bool constructIndex(const std::vector<std::pair<int, int> > &es);
-  bool constructIndex(std::istream &ifs);
-  bool constructIndex(const char *filename);
+  bool loadGraph(const std::vector<std::pair<int, int> > &es);
+  bool loadGraph(std::istream &ifs);
+  bool loadGraph(const char *filename);
+
+  bool constructIndexLLS(int times);
+  bool constructIndexGLS();
 
   // Returns distance between vertices |v| and |w| if they are connected.
   // Otherwise, returns |INT_MAX|.
-  int queryDistance(int v, int w);
-  int queryDistanceGlobal(int v, int w);
+  int queryDistanceLLS(int v, int w);
+  int queryDistanceGLS(int v, int w);
+
+  int queryDistanceExactDijk(int v, int w);
+  int queryDistanceExact(int v, int w);
+
+  void generateLargestComponent(const char* dataIn, const char* dataOut);
 
   // Loads an index. Returns |true| when successful.
   bool loadIndex(std::istream &ifs);
@@ -41,7 +48,6 @@ public:
   }
 
   void Free();
-  void printStatistics();
 
   double GetCurrentTimeSec() {
     struct timeval tv;
@@ -50,25 +56,20 @@ public:
   }
 
   LocalLandmarksScheme()
-    : numVertices(0), timeLoad(0), timeIndexing(0) {}
+    : numVertices(0) {}
   virtual ~LocalLandmarksScheme();
 
 private:
 
   int numVertices;
-  int compressedGraphEdges = 0;
-  std::vector<Graph*> GraphPtrVec;
-  int* rank = NULL;
-  int* whichComponent = NULL;
+  Graph* graphPtr;
+
   std::bitset<maxnode> vis;
   GPtr iniGraph = NULL;
 
-  // Statistics
-  double timeLoad, timeIndexing;
-
   int dfs(const std::vector<std::vector<Edge> >& graph, int u, int dep);
 
-  std::vector<int> parseConnectedGraph(int root, std::vector<std::pair<int, Edge> >& edges, int component);
+  std::vector<int> parseConnectedGraph(int root, std::vector<std::pair<int, Edge> >& edges);
 
   void rankNodes();
 
@@ -77,32 +78,31 @@ private:
 
 template<int NumSelectedLandmarks>
 bool LocalLandmarksScheme<NumSelectedLandmarks>
-::constructIndex(char const *filename) {
+::loadGraph(char const *filename) {
   std::ifstream ifs(filename);
-  return ifs && constructIndex(ifs);
+  return ifs && loadGraph(ifs);
 }
 
 template<int NumSelectedLandmarks>
 bool LocalLandmarksScheme<NumSelectedLandmarks>
-::constructIndex(std::istream &ifs) {
+::loadGraph(std::istream &ifs) {
   std::vector<std::pair<int, int> > es;
   for (int v, w; ifs >> v >> w; ) {
     es.push_back(std::make_pair(v, w));
   }
 
   if (ifs.bad()) return false;
-  constructIndex(es);
-
+  loadGraph(es);
   return true;
 }
 
 template<int NumSelectedLandmarks>
 bool LocalLandmarksScheme<NumSelectedLandmarks>
-::constructIndex(const std::vector<std::pair<int, int> > &es) {
+::loadGraph(const std::vector<std::pair<int, int> > &es) {
   //
   // Prepare the adjacency list and index space
   //
-  timeLoad = -GetCurrentTimeSec();
+  double timeLoad = -GetCurrentTimeSec();
   int &V = numVertices;
   V = 0;
   for (size_t i = 0; i < es.size(); ++i) {
@@ -119,7 +119,116 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
     iniGraph[w].push_back(Edge(v, 1));
   }
 
+  // Order vertices by decreasing order of degree
+  graphPtr = new Graph(V, iniGraph);
+  // graphPtr->constructIndexLLS();
+  timeLoad += GetCurrentTimeSec();
+
+  printf("Load graph in time: %.6fs\n", timeLoad);
+  DeleteArrPtr(iniGraph);
+
+  return true;
+}
+
+template<int NumSelectedLandmarks>
+bool LocalLandmarksScheme<NumSelectedLandmarks>
+::constructIndexLLS(int times) {
+  double timeIndex = -GetCurrentTimeSec();
+  bool status = graphPtr->constructIndexLLS(times, NumSelectedLandmarks);
+  timeIndex += GetCurrentTimeSec();
+
+  printf("constructIndexLLS status: %d, time: %.6fs\n", status, timeIndex);
+  return status;
+}
+
+template<int NumSelectedLandmarks>
+bool LocalLandmarksScheme<NumSelectedLandmarks>
+::constructIndexGLS() {
+  double timeIndex = -GetCurrentTimeSec();
+  bool status = graphPtr->constructIndexGLS(NumSelectedLandmarks);
+  timeIndex += GetCurrentTimeSec();
+
+  printf("constructIndexGLS status: %d, time: %.6fs\n", status, timeIndex);
+  return status;
+}
+
+template<int NumSelectedLandmarks>
+int LocalLandmarksScheme<NumSelectedLandmarks>
+::queryDistanceGLS(int u, int v) {
+  if (u < 0 || v < 0 || u >= numVertices || v >= numVertices) {
+    return INF8;
+  }
+  if (u == v) {
+    return 0;
+  }
+  return  graphPtr->queryDistanceGLS(u, v);
+}
+
+template<int NumSelectedLandmarks>
+int LocalLandmarksScheme<NumSelectedLandmarks>
+::queryDistanceLLS(int u, int v) {
+  if (u < 0 || v < 0 || u >= numVertices || v >= numVertices) {
+    return INF8;
+  }
+  if (u == v) {
+    return 0;
+  }
+  return  graphPtr->queryDistanceLLS(u, v);
+}
+
+template<int NumSelectedLandmarks>
+int LocalLandmarksScheme<NumSelectedLandmarks>
+::queryDistanceExactDijk(int u, int v) {
+  if (u < 0 || v < 0 || u >= numVertices || v >= numVertices) {
+    return INF8;
+  }
+  if (u == v) {
+    return 0;
+  }
+  return graphPtr->queryDistanceExactDijk(u, v);
+}
+
+template<int NumSelectedLandmarks>
+int LocalLandmarksScheme<NumSelectedLandmarks>
+::queryDistanceExact(int u, int v) {
+  if (u < 0 || v < 0 || u >= numVertices || v >= numVertices) {
+    return INF8;
+  }
+  if (u == v) {
+    return 0;
+  }
+  return graphPtr->queryDistanceExact(u, v);
+}
+
+template<int NumSelectedLandmarks>
+void LocalLandmarksScheme<NumSelectedLandmarks>
+::generateLargestComponent(const char* dataIn, const char* dataOut) {
+  std::ifstream ifs(dataIn);
+  std::vector<std::pair<int, int> > es;
+  int V = 0;
+
+  for (int v, w; ifs >> v >> w;) {
+    es.push_back(std::pair<int, int>(v, w));
+    V = std::max(V, std::max(v, w) + 1);
+  }
+
+  iniGraph = new std::vector<Edge>[V];
+
+  for (size_t i = 0; i < es.size(); ++i) {
+    int v = es[i].first, w = es[i].second;
+    if (w == v) {
+      continue;
+    }
+    iniGraph[v].push_back(Edge(w, 1));
+    iniGraph[w].push_back(Edge(v, 1));
+  }
+
+  // remove the duplicate edges between two nodes
+  // remain the shortest edge
   for (int v = 0; v < V; v++) {
+    if (iniGraph[v].size() == 0) {
+      continue;
+    }
     sort(iniGraph[v].begin(), iniGraph[v].end());
     iniGraph[v].erase(std::unique(iniGraph[v].begin(), iniGraph[v].end()), iniGraph[v].end());
 
@@ -128,70 +237,56 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
     }
   }
 
-  timeLoad += GetCurrentTimeSec();
+  int* rank = new int[V];
+  std::vector<Graph*> GraphPtrVec;
+  int mx = 0;
 
   // Order vertices by decreasing order of degree
-  timeIndexing = -GetCurrentTimeSec();
   {
-    whichComponent = new int[V];
-    rank = new int[V];
     for (int v = 0; v < V; v++) {
       rank[v] = -1;
-      whichComponent[v] = -1;
     }
+
     vis.reset();
-    int componentCnt = 0;
-    int mx = 0;
+
     for (int v = 0; v < V; v++) {
       if (vis[v] == 0 && iniGraph[v].size() > 0) {
         std::vector<std::pair<int, Edge> > edges;
-        std::vector<int> vertices = parseConnectedGraph(v, edges, componentCnt);
-//        MSG("vertices num: ", vertices.size());
-        Graph* graphPtr = new Graph(vertices, edges, iniGraph, rank);
+        std::vector<int> vertices = parseConnectedGraph(v, edges);
 
+        Graph* graphPtr = new Graph(vertices, edges, iniGraph, rank);
         GraphPtrVec.push_back(graphPtr);
         if (GraphPtrVec[mx]->numVertices < GraphPtrVec.back()->numVertices) {
           mx = GraphPtrVec.size() - 1;
         }
-        GraphPtrVec[componentCnt++]->constructIndex(4, NumSelectedLandmarks);
       }
     }
   }
-  timeIndexing += GetCurrentTimeSec();
+
+  es = GraphPtrVec[mx]->outputEdges();
+  for (auto& e : es) {
+    if (e.first > e.second) {
+      std::swap(e.first, e.second);
+    }
+  }
+  sort(es.begin(), es.end());
+  es.erase(unique(es.begin(), es.end()), es.end());
+
+  std::ofstream ofs(dataOut);
+  for (auto e : es) {
+    ofs << e.first << ' ' << e.second << std:: endl;
+  }
+
+  for (auto &ptr : GraphPtrVec) {
+    DeletePtr(ptr);
+  }
   DeleteArrPtr(iniGraph);
-  printStatistics();
-  return true;
-}
-
-template<int NumSelectedLandmarks>
-int LocalLandmarksScheme<NumSelectedLandmarks>
-::queryDistance(int u, int v) {
-
-  int distance = INF8;
-  if (u < 0 || v < 0 || u >= numVertices || v >= numVertices ||
-      rank[u] == -1 || rank[v] == -1) {
-    return distance;
-  }
-  if (u == v) {
-    return 0;
-  }
-  if (whichComponent[u] == whichComponent[v]) {
-    int id = whichComponent[u];
-    distance = GraphPtrVec[id]->queryDistance(rank[u], rank[v]);
-  }
-  return distance;
-}
-
-template<int NumSelectedLandmarks>
-void LocalLandmarksScheme<NumSelectedLandmarks>
-::printStatistics() {
-  printf("Load Graph with %d vertices\n", numVertices);
-  printf("TimeLoad: %.6fs TimeIndexed: %.6fs\n", timeLoad, timeIndexing);
+  DeleteArrPtr(rank);
 }
 
 template<int NumSelectedLandmarks>
 std::vector<int> LocalLandmarksScheme<NumSelectedLandmarks>
-::parseConnectedGraph(int root, std::vector<std::pair<int, Edge> >& edges, int component) {
+::parseConnectedGraph(int root, std::vector<std::pair<int, Edge> >& edges) {
   std::queue<int> que;
   que.push(root);
   vis[root] = 1;
@@ -200,7 +295,6 @@ std::vector<int> LocalLandmarksScheme<NumSelectedLandmarks>
   while (!que.empty()) {
     int u = que.front();
     que.pop();
-    whichComponent[u] = component;
     vec.push_back(u);
 
     for (auto e : iniGraph[u]) {
@@ -228,9 +322,12 @@ int LocalLandmarksScheme<NumSelectedLandmarks>
   }
   return cnt;
 }
+
 template<int NumSelectedLandmarks>
 void LocalLandmarksScheme<NumSelectedLandmarks>
 ::rankNodes() {
+  int* rank = new int[numVertices];
+
   std::vector<std::pair<float, int> > deg(numVertices);
 
   int verticesCnt = 0;
@@ -250,6 +347,8 @@ void LocalLandmarksScheme<NumSelectedLandmarks>
   for (int i = 0; i < verticesCnt; ++i) {
     rank[deg[i].second] = i;
   }
+
+  DeleteArrPtr(rank);
 }
 
 template<int NumSelectedLandmarks>
@@ -279,12 +378,8 @@ bool LocalLandmarksScheme<NumSelectedLandmarks>
 template<int NumSelectedLandmarks>
 void LocalLandmarksScheme<NumSelectedLandmarks>
 ::Free() {
-  DeleteArrPtr(rank);
   DeleteArrPtr(iniGraph);
-  DeleteArrPtr(whichComponent);
-  for (auto &ptr : GraphPtrVec) {
-    DeletePtr(ptr);
-  }
+  DeletePtr(graphPtr);
 }
 
 template<int NumSelectedLandmarks>

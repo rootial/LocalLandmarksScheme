@@ -3,7 +3,6 @@
 
 // build SPTree using Dijkstra
 void TreeStruct::buildSPTree() {
-
   std::bitset<maxnode> vis;
   pq que;
 
@@ -25,14 +24,18 @@ void TreeStruct::buildSPTree() {
 
     vis[u] = 1;
     if (u != root) {
-      tree[parent[u]].push_back(u);
+      if (tree != NULL) {
+        tree[parent[u]].push_back(u);
+      }
     }
 
     for (auto &e : graph[u]) {
       int v = e.v;
       if (distance[v] > distance[u] + e.d) {
         distance[v] = distance[u] + e.d;
-        parent[v] = u;
+        if (parent != NULL) {
+          parent[v] = u;
+        }
         que.push(Node(v, distance[v]));
       }
     }
@@ -52,9 +55,23 @@ void TreeStruct::dfs(int u, int fa) {
   }
 }
 
-void TreeStruct::constructIndex() {
+void TreeStruct::constructIndexGLS() {
+  // tree = new std::vector<int>[numVertices];
+  distance = new int[numVertices]; 
+  // parent = new int[numVertices];
+  
   buildSPTree();
+}
 
+void TreeStruct::constructIndexLLS() {
+  level = new int[numVertices * 2];
+  label = new int[numVertices];
+  parent = new int[numVertices];
+  tree = new std::vector<int>[numVertices];
+  distance = new int[numVertices];   
+  
+  buildSPTree();
+  
   indexSize = 0;
   treeNodesNums = 0;
 
@@ -190,7 +207,14 @@ int TreeStruct::getLcaDistance(int a, int b) {
   return level[minIndex];
 }
 
-int TreeStruct::queryDistance(int a, int b) {
+int TreeStruct::queryDistanceGLS(int x, int y) {
+  if (x < 0 || y < 0 || x >= numVertices || y >= numVertices) {
+    return INF8;
+  }
+  return distance[x] + distance[y];
+}
+
+int TreeStruct::queryDistanceLLS(int a, int b) {
   if (a < 0 || b < 0 || a >= numVertices || b >= numVertices) {
     return INF8;
   }

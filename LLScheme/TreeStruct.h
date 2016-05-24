@@ -20,32 +20,23 @@ inline int maxBits(int x) {
   return ret;
 }
 
-struct Node {
-  int u, d;
-  Node() {}
-  Node(int u, int d): u(u), d(d) {}
-  bool operator < (const Node& o) const {
-    return d > o.d;
-  }
-};
-
-typedef std::priority_queue<Node> pq;
-
 class TreeStruct {
 public:
   std::vector<int> *tree = NULL;
 
-  void constructIndex();
+  void constructIndexLLS();
 
-  int queryDistance(int x, int y);
+  void constructIndexGLS();
+
+  int distanceOfNode(int x);
+
+  int queryDistanceGLS(int x, int y);
+
+  int queryDistanceLLS(int x, int y);
 
   TreeStruct(int root, int numVertices,
              ConstGPtr g): graph(g), root(root), numVertices(numVertices) {
-    tree = new std::vector<int>[numVertices];
-    distance = new int[numVertices];
-    level = new int[numVertices * 2];
-    label = new int[numVertices];
-    parent = new int[numVertices];
+
   }
 
   virtual ~TreeStruct();
