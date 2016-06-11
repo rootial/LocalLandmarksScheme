@@ -1,6 +1,7 @@
 #include "CommonHeader.h"
 #include "GraphCompression.h"
 #include "Graph.h"
+#include "SelectLandmarks.h"
 
 int Graph::queryDistanceLLS(int x, int y) {
   if (x < 0 || y < 0 || x >= numVertices || y >= numVertices) {
@@ -172,16 +173,17 @@ int Graph::queryDistanceExactDijk(int x, int y) {
   return dist[y];
 }*/
 
-bool Graph::constructIndexGLS(int NumSelectedLandmarks) {
+bool Graph::constructIndexGLS(int NumSelectedLandmarks, int selectionType) {
+  std::vector<int> selectedLandmarks = selectLandmarks(graph, numVertices, NumSelectedLandmarks, selectionType);
   for (int k = 0; k < NumSelectedLandmarks; k++) {
-    TreeStruct* ts = new TreeStruct(k, numVertices, graph);
+    TreeStruct* ts = new TreeStruct(selectedLandmarks[k], numVertices, graph);
     ts->constructIndexGLS();
     GLSSPtree.push_back(ts);
   }
   return true;
 }
 
-bool Graph::constructIndexLLS(int times, int NumSelectedLandmarks) {
+bool Graph::constructIndexLLS(int times, int NumSelectedLandmarks, int selectionType) {
   int cVertices = numVertices;
   auto ptrGraph = graph;
 
@@ -198,9 +200,9 @@ bool Graph::constructIndexLLS(int times, int NumSelectedLandmarks) {
     cVertices = GraphCompressionPtr->compressGraph();
 
     if (k == times - 1) {
-      GraphCompressionPtr->constructIndexLLS(NumSelectedLandmarks);
+      GraphCompressionPtr->constructIndexLLS(NumSelectedLandmarks-k, selectionType);
     } else {
-      GraphCompressionPtr->constructIndexLLS(1);
+      GraphCompressionPtr->constructIndexLLS(1, selectionType);
     }
 
     if (lastGraphPtr != NULL) {

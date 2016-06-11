@@ -46,6 +46,10 @@
 		<Unit filename="LocalLandmarksScheme.h">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="SelectLandmarks.cpp" />
+		<Unit filename="SelectLandmarks.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="TestUnit.h">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>

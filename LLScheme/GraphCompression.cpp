@@ -1,5 +1,7 @@
 #include "CommonHeader.h"
+
 #include "GraphCompression.h"
+#include "SelectLandmarks.h"
 
 #include <algorithm>
 #include <vector>
@@ -58,27 +60,37 @@ int GraphCompression::queryDistanceLLS(int x, int y) const {
   return ans;
 }
 
-void GraphCompression::constructIndexLLS(int NumSelectedLandmarks) {
+void GraphCompression::constructIndexLLS(int NumSelectedLandmarks, int selectionType) {
   TreeStruct* ts = new TreeStruct(0, numVertices, graph);
   ts->constructIndexLLS();
   SPTree.push_back(ts);
 
-  // build NumSelectedLandmarks - 1 SPTree on compressedGraph
-  // select NumSelectedLandmarks landmarks by degrees
-  std::vector<int> num;
-  for (int i = 0; i < cVertices; i++) {
-    num.push_back(i);
+  if (NumSelectedLandmarks == 1) {
+    return;
   }
-  std::random_shuffle(num.begin(), num.end());
-  for (int i = 0; i < std::min(NumSelectedLandmarks, cVertices); i++) {
-    ts = new TreeStruct(num[i], cVertices, cGraph);
+
+  // build NumSelectedLandmarks - 1 SPTree on compressedGraph
+  // select NumSelectedLandmarks landmarks by random, degrees or closs centrality
+
+  std::vector<int> selected = selectLandmarks(cGraph, cVertices, NumSelectedLandmarks - 1, selectionType);
+
+  for (int i = 0; i < std::min(NumSelectedLandmarks - 1, cVertices); i++) {
+    ts = new TreeStruct(selected[i], cVertices, cGraph);
     ts->constructIndexLLS();
     SPTree.push_back(ts);
   }
 }
 
+//void GraphCompression::deleteIndexLLS() {
+//  for (auto& ptr: SPTree) {
+//    DeletePtr(ptr);
+//  }
+//  SPTree.clear();
+//}
+
 // rank vertices by degrees and relabel the compressed graph using the
 // new node label
+
 void GraphCompression::relabelGraph() {
   cGraph = new std::vector<Edge>[cVertices];
   std::vector<std::pair<float, int> > deg(cVertices);

@@ -2,6 +2,7 @@
 #define GRAPH_H_INCLUDED
 
 #include "GraphCompression.h"
+
 #include <algorithm>
 #include <cstdlib>
 
@@ -17,9 +18,9 @@ public:
 
   int queryDistanceExact(int x, int y);
 
-  bool constructIndexLLS(int times, int NumSelectedLandmarks);
+  bool constructIndexLLS(int times, int NumSelectedLandmarks, int selectionType);
 
-  bool constructIndexGLS(int NumSelectedLandmarks);
+  bool constructIndexGLS(int NumSelectedLandmarks, int selectionType);
 
   std::vector<std::pair<int, int> > outputEdges();
 

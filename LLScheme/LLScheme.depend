@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1463914354 source:e:\github\locallandmarksscheme\llscheme\main.cpp
+1465399305 source:e:\github\locallandmarksscheme\llscheme\main.cpp
 	"LocalLandmarksScheme.h"
 	"TestUnit.h"
 	<malloc.h>
@@ -17,17 +17,18 @@
 	<algorithm>
 	<fstream>
 
-1463900310 e:\github\locallandmarksscheme\llscheme\graphcompression.h
+1464510325 e:\github\locallandmarksscheme\llscheme\graphcompression.h
 	"CommonHeader.h"
 	"TreeStruct.h"
 	<cstdint>
 	<cstdlib>
 	<vector>
 
-1463903259 e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.h
+1465400835 e:\github\locallandmarksscheme\llscheme\locallandmarksscheme.h
 	"CommonHeader.h"
 	"Graph.h"
 	"TreeStruct.h"
+	"SelectLandmarks.h"
 	<algorithm>
 	<cstdlib>
 	<bitset>
@@ -46,9 +47,10 @@
 1463389176 e:\github\locallandmarksscheme\llscheme\common.h
 	<stdint.h>
 
-1463913329 source:e:\github\locallandmarksscheme\llscheme\graphcompression.cpp
+1464510607 source:e:\github\locallandmarksscheme\llscheme\graphcompression.cpp
 	"CommonHeader.h"
 	"GraphCompression.h"
+	"SelectLandmarks.h"
 	<algorithm>
 	<vector>
 
@@ -78,7 +80,8 @@
 	<sys/time.h>
 	<vector>
 
-1463834863 e:\github\locallandmarksscheme\llscheme\commonheader.h
+1464510221 e:\github\locallandmarksscheme\llscheme\commonheader.h
+	<algorithm>
 	<cassert>
 	<cstdio>
 	<cstdlib>
@@ -93,19 +96,26 @@
 	"GraphCompression.h"
 	<cstdio>
 
-1463913558 e:\github\locallandmarksscheme\llscheme\testunit.h
+1465398464 e:\github\locallandmarksscheme\llscheme\testunit.h
 	"CommonHeader.h"
 	"LocalLandmarksScheme.h"
 	"GraphCompression.h"
 	<cstdio>
 
-1463907035 source:e:\github\locallandmarksscheme\llscheme\graph.cpp
+1464510607 source:e:\github\locallandmarksscheme\llscheme\graph.cpp
 	"CommonHeader.h"
 	"GraphCompression.h"
 	"Graph.h"
+	"SelectLandmarks.h"
 
-1463903348 e:\github\locallandmarksscheme\llscheme\graph.h
+1464510308 e:\github\locallandmarksscheme\llscheme\graph.h
 	"GraphCompression.h"
 	<algorithm>
 	<cstdlib>
+
+1464510607 e:\github\locallandmarksscheme\llscheme\selectlandmarks.h
+	"CommonHeader.h"
+
+1464517782 source:e:\github\locallandmarksscheme\llscheme\selectlandmarks.cpp
+	"SelectLandmarks.h"
 

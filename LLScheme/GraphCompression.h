@@ -1,5 +1,6 @@
 #ifndef GRAPHCOMPRESSION_H_INCLUDED
 #define GRAPHCOMPRESSION_H_INCLUDED
+
 #include "CommonHeader.h"
 #include "TreeStruct.h"
 
@@ -40,7 +41,7 @@ public:
 
   int queryDistanceOnNextCompressedGraph(int x, int y) const;
 
-  void constructIndexLLS(int num);
+  void constructIndexLLS(int num, int selectionType);
 
   bool loadGraph(int n, ConstGPtr g) {
     if (g != NULL) {

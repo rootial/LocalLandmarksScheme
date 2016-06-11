@@ -1,6 +1,7 @@
 #ifndef COMMONHEADER_H_INCLUDED
 #define COMMONHEADER_H_INCLUDED
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
